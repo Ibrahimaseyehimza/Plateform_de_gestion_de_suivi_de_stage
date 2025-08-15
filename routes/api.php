@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +15,26 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::post('v1/register', [AuthController::class, 'register']);
+Route::post('v1/login', [AuthController::class, 'login']);
+
+Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Routes accessibles uniquement aux admins
+    Route::middleware('role:admin')->group(function () {
+        // Route::post('/stages', [StageController::class, 'store']);
+        // Route::delete('/stages/{id}', [StageController::class, 'destroy']);
+    });
+
+    // Routes accessibles aux chefs de département et admins
+    // Route::middleware('role:admin,chef_departement')->group(function () {
+    //     Route::get('/departements', 'DepartementController@index');
+    // });
+
+    // Routes accessibles aux étudiants
+    // Route::middleware('role:etudiant')->group(function () {
+    //     Route::get('/mes-taches', 'TacheController@mesTaches');
+    // });
+
+    Route::post('/logout', [AuthController::class, 'logout']);
 });

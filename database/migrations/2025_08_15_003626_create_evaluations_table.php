@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('evaluations', function (Blueprint $table) {
             $table->id();
+             $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+            $table->float('note');
+            //  $table->float('note')->check('note >= 0 AND note <= 20'); // note sur 20
+            $table->text('commentaire')->nullable();
             $table->timestamps();
         });
     }

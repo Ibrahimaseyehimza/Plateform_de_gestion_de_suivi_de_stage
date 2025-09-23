@@ -16,7 +16,17 @@ class User extends Authenticatable
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
+     *
+     *
      */
+
+    const ROLE_CHEF_DEPARTEMENT = 'chef_departement';
+    const ROLE_CHEF_METIER = 'chef_metier';
+    const ROLE_MAITRE_STAGE = 'maitre_stage';
+    const ROLE_RH = 'rh';
+    const ROLE_APPRENANT = 'apprenant';
+
+
     protected $fillable = [
         'name',
         'email',

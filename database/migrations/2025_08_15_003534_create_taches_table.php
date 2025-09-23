@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('taches', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
+            $table->string('titre');
+            $table->text('description')->nullable();
+            $table->datetime('dateLimite');
+            $table->enum('statut', ['en_attente', 'en_cours', 'terminee'])->default('en_attente');
             $table->timestamps();
         });
     }

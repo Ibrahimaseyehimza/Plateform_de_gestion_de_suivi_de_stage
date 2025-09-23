@@ -13,7 +13,19 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('expediteur_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('destinataire_id')->constrained('users')->onDelete('cascade');
+            $table->text('contenu');
+            $table->timestamp('date')->useCurrent();
+            $table->boolean('lu')->default(false); // Pour marquer si le message est lu
             $table->timestamps();
+
+            // Index pour optimiser les requêtes
+            $table->index(['expediteur_id', 'destinataire_id']);
+
+
+            // $table->foreign('expediteur_id')->references('id')->on('utilisateurs')->onDelete('cascade');
+            // $table->foreign('destinataire_id')->references('id')->on('utilisateurs')->onDelete('cascade');
         });
     }
 

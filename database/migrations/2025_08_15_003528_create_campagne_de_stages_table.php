@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('campagne_de_stages', function (Blueprint $table) {
             $table->id();
+            $table->string('titre');
+            $table->date('dateLancement');
+            $table->date('dateCloture');
             $table->timestamps();
         });
     }

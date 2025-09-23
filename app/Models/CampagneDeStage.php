@@ -8,4 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class CampagneDeStage extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+                            'titre',
+                             'dateLancement',
+                              'dateCloture'
+
+                            ];
+
+
 }
+
+

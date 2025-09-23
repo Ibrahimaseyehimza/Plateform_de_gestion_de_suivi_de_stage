@@ -8,4 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Evaluation extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'stage_id',
+        'note',
+        'commentaire',
+    ];
+
+    public function stage()
+    {
+        return $this->belongsTo(Stage::class);
+    }
 }

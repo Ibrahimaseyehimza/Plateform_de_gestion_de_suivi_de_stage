@@ -8,4 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Livrable extends Model
 {
     use HasFactory;
+
+     protected $fillable = [
+        'tache_id',
+        'fichier',
+        'commentaire',
+    ];
+
+    public function tache()
+    {
+        return $this->belongsTo(Tache::class);
+    }
 }

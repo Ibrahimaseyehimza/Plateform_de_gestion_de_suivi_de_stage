@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('tuteur_id')->nullable()->constrained('users')->onDelete('set null');
             $table->date('dateDebut');
             $table->date('dateFin');
+            $table->foreignId('campagne_id')->nullable()->constrained('campagnes')->onDelete('cascade');
             $table->timestamps();
         });
     }

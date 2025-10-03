@@ -3,10 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Metier;
+use App\Models\Entreprise;
+use App\Models\Departement;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -32,6 +35,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'must_change_password',
+        // 'departement_id',
+        'metier_id',
+        'entreprise_id'
+
     ];
 
     /**
@@ -53,4 +61,35 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+
+     // Relations
+    // public function departement()
+    // {
+    //     return $this->belongsTo(Departement::class);
+    // }
+
+    public function metier()
+    {
+        return $this->belongsTo(Metier::class);
+    }
+
+    // public function entreprise()
+    // {
+    //     return $this->bolongsTo(Entreprise::class);
+    // }
+
+    /**
+     * Vérifier si l'utilisateur est un RH
+     */
+    public function isRH()
+    {
+        return $this->role === 'rh';
+    }
+
+    public function entreprise()
+    {
+        return $this->belongsTo(Entreprise::class, 'entreprise_id');
+    }
+
 }

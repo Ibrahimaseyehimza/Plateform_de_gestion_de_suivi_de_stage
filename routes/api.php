@@ -3,13 +3,20 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\StageController;
 use App\Http\Controllers\TacheController;
+use App\Http\Controllers\MetierController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\CampagneController;
+use App\Http\Controllers\CampagneDeStageController;
 use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\DepartementController;
+use App\Http\Controllers\ChefDeMetierController;
+use App\Http\Controllers\RhController;
+use App\Models\CampagneDeStage;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +31,13 @@ use App\Http\Controllers\EvaluationController;
 
 Route::post('v1/register', [AuthController::class, 'register']);
 Route::post('v1/login', [AuthController::class, 'login']);
+Route::post('v1/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('v1/reset-password', [AuthController::class, 'resetPassword']);
+
+
+
+Route::get('v1/metiers', [MetierController::class, 'index']);
+Route::get('v1/departements', [DepartementController::class, 'index']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -101,9 +115,49 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 // Route réservée au chef de département
-    Route::get('/dashboard/chef-departement', function () {
-        return "Bienvenue Chef de Département";
-    })->middleware('role:chef_departement');
+    // Route::get('/dashboard/chef-departement',
+    // CampagneDeStage::class)->middleware('role:chef_departement');
+
+        Route::middleware(['auth:sanctum', 'role:chef_departement'])->group(function () {
+
+                // Métiers
+            Route::apiResource('v1/metiers', MetierController::class)->except('update');
+
+
+
+            // Chefs de métier
+            Route::apiResource('v1/chefs-de-metier', ChefDeMetierController::class);
+
+            // Routes supplémentaires pour les chefs de métier
+            Route::get('v1/chefs-de-metier/metiers/list', [ChefDeMetierController::class, 'getMetiers']);
+            Route::get('v1/chefs-de-metier/metier/{metier_id}', [ChefDeMetierController::class, 'getByMetier']);
+
+
+            // Utilisateurs
+            // Route::post('/v1/users', [UserController::class, 'store']); // créer chef de métier / apprenant / RH
+            // Route::get('v1/users', [UserController::class, 'index']);
+            // Route::delete('/v1/users/{id}', [UserController::class, 'destroy']);
+
+            // Entreprises
+            Route::apiResource('/v1/entreprises', EntrepriseController::class);
+            Route::get('v1/metiers/{metier}/entreprises', [EntrepriseController::class, 'getByMetier']);
+
+            Route::apiResource('/v1/rhs', RhController::class);
+
+
+            // Campagnes
+            Route::apiResource('/v1/campagnes', CampagneDeStageController::class);
+            Route::post('/v1/campagnes/{id}/send-mails', [CampagneDeStageController::class, 'sendMails']);
+            // Route::resource('v1/dashboard/campagne', CampagneController::class);
+            // Route::resource('v1/dashboard/entreprise', EntrepriseController::class);
+            Route::post('v1/users', [UserController::class, 'store']);
+
+            // Affectations
+            Route::post('/v1/stages/assign', [StageController::class, 'assign']);
+
+
+     })->middleware('role:chef_departement');
+
 
     // Route réservée au chef de métier
     Route::get('/dashboard/chef-metier', function () {
@@ -113,7 +167,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Route réservée au maître de stage
     Route::get('/dashboard/maitre-stage', function () {
         return "Bienvenue Maître de Stage";
-    })->middleware('role:maitre_stage');
+    })->middleware(' role:maitre_stage');
 
     // Route réservée aux RH
     Route::get('/dashboard/rh', function () {

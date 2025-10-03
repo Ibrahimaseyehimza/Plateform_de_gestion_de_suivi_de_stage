@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('campagne_de_stages', function (Blueprint $table) {
             $table->id();
             $table->string('titre');
-            $table->date('dateLancement');
-            $table->date('dateCloture');
+            $table->date('date_debut');
+            $table->date('date_fin');
+             $table->foreignId('metier_id')->constrained()->onDelete('cascade'); 
             $table->timestamps();
         });
     }

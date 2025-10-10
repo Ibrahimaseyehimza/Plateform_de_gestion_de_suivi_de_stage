@@ -33,9 +33,9 @@ class Metier extends Model
             return $this->hasOne(ChefDeMetier::class, 'metier_id');
         }
 
-    // public function campagnes() {
-    //     return $this->belongsToMany(CampagneDeStage::class);
-    // }
+    public function campagnes() {
+        return $this->belongsToMany(CampagneDeStage::class);
+    }
 
      /**
      * Relation : un métier appartient à un département
@@ -61,6 +61,11 @@ class Metier extends Model
     public function entreprises()
     {
         return $this->hasMany(Entreprise::class);
+    }
+
+    public function chef()
+    {
+        return $this->hasOne(User::class)->where('role', 'chef_metier');
     }
 
 }

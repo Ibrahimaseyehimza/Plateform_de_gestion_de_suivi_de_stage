@@ -2,169 +2,248 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\Stage;
 use App\Models\Metier;
+use App\Models\Entreprise;
 use App\Models\ChefDeMetier;
 use Illuminate\Http\Request;
-use Illuminate\Auth\Events\Validated;
-use App\Http\Requests\ChefDeMetierRequest;
+use App\Models\CampagneDeStage;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class ChefDeMetierController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Récupérer tous les chefs de métier
     public function index()
     {
-         $chefsDeMetier = ChefDeMetier::with(['metier'])->get();
+        $chefs = ChefDeMetier::with('metier')->get();
 
         return response()->json([
             'success' => true,
-            'data' => $chefsDeMetier
-        ], 200);
+            'data' => $chefs
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    // Créer un chef de métier
+    // public function store(Request $request)
+    // {
+    //     // Validation
+    //     $validator = Validator::make($request->all(), [
+    //         'nom' => 'required|string|max:255',
+    //         'prenom' => 'required|string|max:255',
+    //         'email' => 'required|email|unique:chef_de_metiers,email',
+    //         'password' => 'required|string|min:8|confirmed',
+    //         'metier_id' => 'required|exists:metiers,id'
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors' => $validator->errors()
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         // Créer le chef de métier
+    //         $chef = ChefDeMetier::create([
+    //             'nom' => $request->nom,
+    //             'prenom' => $request->prenom,
+    //             'email' => $request->email,
+    //             'metier_id' => $request->metier_id
+    //         ]);
+
+    //         // Créer l'utilisateur associé dans la table users
+    //         User::create([
+    //             'name' => $request->prenom . ' ' . $request->nom,
+    //             'email' => $request->email,
+    //             'password' => Hash::make($request->password),
+    //             'role' => 'chef_metier'
+    //         ]);
+
+    //         // Recharger avec la relation
+    //         $chef->load('metier');
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Chef de métier créé avec succès',
+    //             'data' => $chef
+    //         ], 201);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Erreur lors de la création',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
+    public function store(Request $request)
+{
+    // Validation
+    $validator = Validator::make($request->all(), [
+        'nom' => 'required|string|max:255',
+        'prenom' => 'required|string|max:255',
+        'email' => 'required|email|unique:chef_de_metiers,email|unique:users,email',
+        'password' => 'required|string|min:8|confirmed',
+        'metier_id' => 'required|exists:metiers,id'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(ChefDeMetierRequest $request)
-    {
-        try {
-            $chefDeMetier = ChefDeMetier::create([
-                'nom' => $request->nom,
-                'prenom' => $request->prenom,
-                'email' => $request->email,
-                'metier_id' => $request->metier_id,
-            ]);
+    try {
+        \DB::beginTransaction();
 
-            // Charger la relation métier pour la réponse
-            $chefDeMetier->load(['metier']);
+        // Créer l'utilisateur d'abord
+        $user = User::create([
+            'name' => $request->prenom . ' ' . $request->nom,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'chef_metier'
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Chef de métier créé avec succès',
-                'data' => $chefDeMetier
-            ], 201);
+        // Créer le chef de métier AVEC le password
+        $chef = ChefDeMetier::create([
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), // ✅ AJOUTER CETTE LIGNE
+            'metier_id' => $request->metier_id
+        ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la création du chef de métier',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+        \DB::commit();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(ChefDeMetier $chefDeMetier)
-    {
-         // Charger les relations
-        $chefDeMetier->load(['metier']);
+        // Recharger avec la relation
+        $chef->load('metier');
 
         return response()->json([
             'success' => true,
-            'data' => $chefDeMetier
-        ], 200);
-    }
+            'message' => 'Chef de métier créé avec succès',
+            'data' => $chef
+        ], 201);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+    } catch (\Illuminate\Database\QueryException $e) {
+        \DB::rollBack();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(ChefDeMetierRequest $request, ChefDeMetier $chefDeMetier)
-    {
-        try {
-            $chefDeMetier->update([
-                'nom' => $request->nom,
-                'prenom' => $request->prenom,
-                'email' => $request->email,
-                'metier_id' => $request->metier_id,
-            ]);
-
-            // Recharger les relations
-            $chefDeMetier->load(['metier']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Chef de métier modifié avec succès',
-                'data' => $chefDeMetier
-            ], 200);
-
-        } catch (\Exception $e) {
+        if ($e->getCode() == 23000) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la modification du chef de métier',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Cet email existe déjà',
+                'error' => 'Email déjà utilisé'
+            ], 409);
         }
-    }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ChefDeMetier $chefDeMetier)
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la création',
+            'error' => $e->getMessage()
+        ], 500);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la création',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+    // Supprimer un chef de métier
+    public function destroy($id)
     {
         try {
-            $chefDeMetier->delete();
+            $chef = ChefDeMetier::findOrFail($id);
+
+            // Supprimer aussi l'utilisateur associé
+            User::where('email', $chef->email)->delete();
+
+            $chef->delete();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Chef de métier supprimé avec succès'
-            ], 200);
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la suppression du chef de métier',
+                'message' => 'Erreur lors de la suppression',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
-    /**
-     * Obtenir tous les métiers pour les listes déroulantes
-     */
+    // Récupérer la liste des métiers
     public function getMetiers()
     {
-        $metiers = Metier::select('id', 'nom')->get();
+        $metiers = Metier::all();
 
         return response()->json([
             'success' => true,
             'data' => $metiers
-        ], 200);
+        ]);
     }
 
-
-     /**
-     * Obtenir les chefs de métier par métier
-     */
+    // Récupérer les chefs d'un métier spécifique
     public function getByMetier($metier_id)
     {
-        $chefsDeMetier = ChefDeMetier::where('metier_id', $metier_id)
-                                   ->with(['metier'])
-                                   ->get();
+        $chefs = ChefDeMetier::where('metier_id', $metier_id)
+                             ->with('metier')
+                             ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $chefsDeMetier
-        ], 200);
+            'data' => $chefs
+        ]);
     }
 
 
+
+    public function campagnes()
+    {
+        $user = auth()->user();
+
+        if ($user->role !== 'chef_metier') {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
+
+        $campagnes = CampagneDeStage::with('entreprises')
+            ->where('metier_id', $user->metier_id)
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $campagnes]);
+    }
+
+    public function entreprises()
+    {
+        $user = auth()->user();
+
+        $entreprises = Entreprise::where('metier_id', $user->metier_id)->get();
+
+        return response()->json(['success' => true, 'data' => $entreprises]);
+    }
+
+    public function stages()
+    {
+        $user = auth()->user();
+
+        $stages = Stage::with(['etudiant', 'entreprise', 'campagne'])
+            ->whereHas('campagne', function ($q) use ($user) {
+                $q->where('metier_id', $user->metier_id);
+            })
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $stages]);
+    }
 }

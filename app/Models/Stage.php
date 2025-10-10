@@ -9,26 +9,54 @@ class Stage extends Model
 {
     use HasFactory;
 
+    // protected $fillable = [
+    //     'etudiant_id',
+    //     'entreprise_id',
+    //     'tuteur_id',
+    //     'dateDebut',
+    //     'dateFin',
+    // ];
+
     protected $fillable = [
-        'etudiant_id',
+        'titre',
+        'description',
+        'date_debut',
+        'date_fin',
+        'etat',
+        'campagne_id',
         'entreprise_id',
-        'tuteur_id',
-        'dateDebut',
-        'dateFin',
+        'etudiant_id',
     ];
 
-      public function etudiant()
+    //   public function etudiant()
+    // {
+    //     return $this->belongsTo(User::class, 'etudiant_id');
+    // }
+
+    // public function entreprise()
+    // {
+    //     return $this->belongsTo(Entreprise::class);
+    // }
+
+    // public function tuteur()
+    // {
+    //     return $this->belongsTo(User::class, 'tuteur_id');
+    // }
+
+
+
+     public function campagne()
     {
-        return $this->belongsTo(User::class, 'etudiant_id');
+        return $this->belongsTo(CampagneDeStage::class, 'campagne_id');
     }
 
     public function entreprise()
     {
-        return $this->belongsTo(Entreprise::class);
+        return $this->belongsTo(Entreprise::class, 'entreprise_id');
     }
 
-    public function tuteur()
+    public function etudiant()
     {
-        return $this->belongsTo(User::class, 'tuteur_id');
-    }   
+        return $this->belongsTo(User::class, 'etudiant_id');
+    }
 }

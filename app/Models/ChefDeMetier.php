@@ -14,7 +14,12 @@ class ChefDeMetier extends Model
         'nom',
         'prenom',
         'email',
+        'password',
         'metier_id'
+    ];
+
+     protected $hidden = [
+        'password',  // ✅ Cacher dans les réponses JSON
     ];
 
     public function metier() {

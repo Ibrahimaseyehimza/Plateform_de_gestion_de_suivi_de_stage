@@ -59,6 +59,8 @@ class Entreprise extends Model
         return $this->belongsTo(Metier::class);
     }
 
+    
+
 
 
 }

@@ -14,6 +14,8 @@ class MaitreDeStage extends Model
         'nom',
         'prenom',
         'email',
+        'password',
+        'entreprise_id',
     ];
 
     public function apprenants()

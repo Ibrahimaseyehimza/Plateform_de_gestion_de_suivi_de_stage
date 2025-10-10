@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nom');
             $table->string('prenom');
             $table->string('email')->unique();
+            $table->string('password')->after('email');
             // $table->string('metier_id');
             $table->foreignId('metier_id')->constrained('metiers')->onDelete('cascade');
             $table->timestamps();

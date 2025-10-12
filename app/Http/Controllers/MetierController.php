@@ -79,11 +79,9 @@ class MetierController extends Controller
     //     }
     // }
 
-    public function destroy(Metier $metier)
-    {
-        // $metier = Metier::where('departement_id', auth()->user()->departement_id)->findOrFail($id);
-        $metier->delete();
-
-        return response()->json(['message' => 'Métier supprimé']);
-    }
+    public function destroy($id) {
+    $metier = Metier::findOrFail($id);
+    $metier->delete();
+    return response()->json(['message' => 'Métier supprimé']); // j'ai ajouter ca 
+}
 }

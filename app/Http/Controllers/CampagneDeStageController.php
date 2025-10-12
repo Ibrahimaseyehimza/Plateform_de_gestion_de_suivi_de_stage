@@ -53,4 +53,26 @@ class CampagneDeStageController extends Controller
             'data' => $campagne->load('metier', 'entreprises')
         ], 201);
     }
+    /**
+     * Supprimer une campagne de stage c'est que j'ai ajouter
+     */
+    public function destroy($id)
+    {
+        try {
+            $campagne = CampagneDeStage::findOrFail($id);
+            $campagne->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Campagne supprimée avec succès'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

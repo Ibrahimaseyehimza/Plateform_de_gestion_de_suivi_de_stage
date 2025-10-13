@@ -16,8 +16,9 @@ return new class extends Migration
             $table->string('nom');
             $table->string('prenom');
             $table->string('email');
+            $table->string('matricule')->unique();
             $table->foreignId('metier_id')->constrained();
-            $table->foreignId('maitre_de_stage_id')->constrained(); 
+            // $table->foreignId('maitre_de_stage_id')->constrained();
             $table->timestamps();
         });
     }

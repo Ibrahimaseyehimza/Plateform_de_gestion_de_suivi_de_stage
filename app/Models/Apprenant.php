@@ -63,7 +63,7 @@ class Apprenant extends Authenticatable // Pour l'authentification
         'email',
         'matricule',
         'metier_id',
-        'maitre_de_stage_id',
+        // 'maitre_de_stage_id',
     ];
 
     protected $hidden = [

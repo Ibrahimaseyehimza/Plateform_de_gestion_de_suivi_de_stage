@@ -407,3 +407,4 @@ class ApprenantController extends Controller
         return response()->json(['success' => true, 'data' => $stage]);
     }
 }
+    

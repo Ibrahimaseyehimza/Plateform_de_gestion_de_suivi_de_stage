@@ -82,30 +82,87 @@ class AuthController extends Controller
      * Connexion d'un utilisateur existant
      */
 
+        // public function login(LoginRequest $request)
+        // {
+        //     $credentials = $request->only('email', 'password');
+
+        //     if (!Auth::attempt($credentials)) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'message' => 'Identifiants invalides'
+        //         ], 401);
+        //     }
+
+        //     $user = Auth::user();
+        //     $token = $user->createToken('auth_token')->plainTextToken;
+
+        //     return response()->json([
+        //         'success' => true,
+        //         'message' => 'Connexion réussie',
+        //         'data' => [
+        //             'user' => $user,
+        //             'token' => $token,
+        //             'must_change_password' => $user->must_change_password,
+        //         ]
+        //     ]);
+        // }
+
         public function login(LoginRequest $request)
-        {
-            $credentials = $request->only('email', 'password');
+{
+    $credentials = $request->only('email', 'password');
 
-            if (!Auth::attempt($credentials)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Identifiants invalides'
-                ], 401);
-            }
+    // 🔹 ÉTAPE 1 : Vérifier si c'est un apprenant
+    $apprenant = \App\Models\Apprenant::where('email', $request->email)->first();
 
-            $user = Auth::user();
-            $token = $user->createToken('auth_token')->plainTextToken;
-
+    if ($apprenant) {
+        // C'est un apprenant, vérifier le matricule
+        if ($request->password !== $apprenant->matricule) {
             return response()->json([
-                'success' => true,
-                'message' => 'Connexion réussie',
-                'data' => [
-                    'user' => $user,
-                    'token' => $token,
-                    'must_change_password' => $user->must_change_password,
-                ]
-            ]);
+                'success' => false,
+                'message' => 'Email ou matricule incorrect'
+            ], 401);
         }
+
+        // ✅ Connexion réussie pour l'apprenant
+        $token = $apprenant->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Connexion réussie',
+            'data' => [
+                'user' => [
+                    'id' => $apprenant->id,
+                    'name' => $apprenant->nom . ' ' . $apprenant->prenom,
+                    'email' => $apprenant->email,
+                    'role' => 'apprenant',
+                ],
+                'token' => $token,
+                'must_change_password' => false,
+            ]
+        ]);
+    }
+
+    // 🔹 ÉTAPE 2 : Sinon, connexion normale pour les autres utilisateurs
+    if (!Auth::attempt($credentials)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Identifiants invalides'
+        ], 401);
+    }
+
+    $user = Auth::user();
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Connexion réussie',
+        'data' => [
+            'user' => $user,
+            'token' => $token,
+            'must_change_password' => $user->must_change_password,
+        ]
+    ]);
+}
 
 
     /**

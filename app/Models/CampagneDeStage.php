@@ -13,9 +13,11 @@ class CampagneDeStage extends Model
 
     protected $fillable = [
         'titre',
+        'description',
         'date_debut',
         'date_fin',
-        'metier_id'
+        'metier_id',
+        'statut',
     ];
 
 
@@ -28,9 +30,9 @@ class CampagneDeStage extends Model
     // }
 
 
-    public function metiers() {
-        return $this->belongsToMany(Metier::class, 'campagne_stage_metier');
-    }
+    // public function metiers() {
+    //     return $this->belongsToMany(Metier::class, 'campagne_stage_metier');
+    // }
 
     // 🔗 Relation avec Metier
         public function metier()

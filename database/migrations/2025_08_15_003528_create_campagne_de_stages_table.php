@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('campagne_de_stages', function (Blueprint $table) {
             $table->id();
             $table->string('titre');
+            $table->string('description');
             $table->date('date_debut');
             $table->date('date_fin');
-             $table->foreignId('metier_id')->constrained()->onDelete('cascade'); 
+             $table->foreignId('metier_id')->constrained()->onDelete('cascade');
+            $table->enum('statut', ['ouverte', 'cloturee'])->default('ouverte');
+
             $table->timestamps();
         });
     }

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Apprenant;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
 class ApprenantAuthController extends Controller
@@ -12,41 +13,90 @@ class ApprenantAuthController extends Controller
     /**
      * Connexion d'un apprenant avec email et matricule
      */
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'email' => 'required|email',
+    //         'matricule' => 'required|string',
+    //     ]);
+
+    //     // Chercher l'apprenant par email
+    //     $apprenant = Apprenant::where('email', $request->email)->first();
+
+    //     // Vérifier si l'apprenant existe et si le matricule correspond
+    //     if (!$apprenant || !Hash::check($request->matricule, $apprenant->password)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Email ou matricule incorrect'
+    //         ], 401);
+    //     }
+
+    //     // Créer un token d'authentification
+    //     $token = $apprenant->createToken('apprenant-token')->plainTextToken;
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Connexion réussie',
+    //         'token' => $token,
+    //         'apprenant' => [
+    //             'id' => $apprenant->id,
+    //             'nom' => $apprenant->nom,
+    //             'prenom' => $apprenant->prenom,
+    //             'email' => $apprenant->email,
+    //             'matricule' => $apprenant->matricule,
+    //             'metier' => $apprenant->metier,
+    //         ]
+    //     ], 200);
+    // }
+
+
     public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'matricule' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'nullable|string',
+    ]);
 
-        // Chercher l'apprenant par email
-        $apprenant = Apprenant::where('email', $request->email)->first();
+    $user = Apprenant::where('email', $request->email)->first();
 
-        // Vérifier si l'apprenant existe et si le matricule correspond
-        if (!$apprenant || !Hash::check($request->matricule, $apprenant->password)) {
+    if (!$user) {
+        return response()->json([
+            'message' => 'Aucun utilisateur trouvé avec cet email.'
+        ], 401);
+    }
+
+    // 🔹 Cas 1 : utilisateur avec un mot de passe
+    if ($user->password && !empty($request->password)) {
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Mot de passe incorrect.'], 401);
+        }
+    }
+    // 🔹 Cas 2 : apprenant sans mot de passe (connexion via matricule)
+    elseif (!$user->password) {
+        // Vérifie si le champ password contient le matricule
+        if ($request->password !== $user->matricule) {
             return response()->json([
-                'success' => false,
-                'message' => 'Email ou matricule incorrect'
+                'message' => 'Matricule incorrect.'
             ], 401);
         }
-
-        // Créer un token d'authentification
-        $token = $apprenant->createToken('apprenant-token')->plainTextToken;
-
+    } else {
         return response()->json([
-            'success' => true,
-            'message' => 'Connexion réussie',
-            'token' => $token,
-            'apprenant' => [
-                'id' => $apprenant->id,
-                'nom' => $apprenant->nom,
-                'prenom' => $apprenant->prenom,
-                'email' => $apprenant->email,
-                'matricule' => $apprenant->matricule,
-                'metier' => $apprenant->metier,
-            ]
-        ], 200);
+            'message' => 'Identifiants invalides.'
+        ], 401);
     }
+
+    // ✅ Créer un token d’accès
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'user' => $user,
+            'token' => $token,
+        ],
+    ]);
+}
+
 
     /**
      * Déconnexion

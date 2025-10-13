@@ -276,8 +276,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 
-
-
 // ============================================================
         //  ROUTES POUR ÉTUDIANTS
         // ============================================================
@@ -292,20 +290,12 @@ Route::prefix('apprenant')->group(function () {
     Route::post('login', [ApprenantAuthController::class, 'login']);
 });
 
-// Routes protégées pour les apprenants
-Route::middleware(['auth:sanctum'])->prefix('apprenant')->group(function () {
-    Route::post('logout', [ApprenantAuthController::class, 'logout']);
-    Route::get('me', [ApprenantAuthController::class, 'me']);
-    Route::post('change-password', [ApprenantAuthController::class, 'changePassword']);
-});
-
-
-
-
-
-
-
-
+        // Routes protégées pour les apprenants
+        Route::middleware(['auth:sanctum'])->prefix('apprenant')->group(function () {
+            Route::post('logout', [ApprenantAuthController::class, 'logout']);
+            Route::get('me', [ApprenantAuthController::class, 'me']);
+            Route::post('change-password', [ApprenantAuthController::class, 'changePassword']);
+        });
 
         });
 
@@ -327,6 +317,14 @@ Route::middleware(['auth:sanctum'])->prefix('apprenant')->group(function () {
 // ->middleware('role:chef_departement');
 
 
+
+
+    Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1/apprenant')->group(function () {
+    Route::get('/campagnes_apprenant', [ApprenantController::class, 'campagnesActives']);
+    Route::post('/postuler', [ApprenantController::class, 'postuler']);
+    Route::get('/demandes', [ApprenantController::class, 'mesDemandes']);
+    Route::get('/stage', [ApprenantController::class, 'monStage']);
+});
 
 
 

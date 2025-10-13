@@ -23,7 +23,8 @@ class ChefDeMetierSeeder extends Seeder
             [
                 'nom' => 'Diallo',
                 'prenom' => 'Amadou',
-                'email' => 'amadou@egmail.com',
+                'password' => bcrypt('00000000'),
+                'email' => 'amadou@gmail.com',
                 'metier_id' => 1, // Développeur Web
             ],
 
@@ -45,5 +46,5 @@ class ChefDeMetierSeeder extends Seeder
             ChefDeMetier::create($chef);
         }
     }
-    
+
 }

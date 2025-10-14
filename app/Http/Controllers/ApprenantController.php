@@ -54,17 +54,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 // namespace App\Http\Controllers;
 
 // use App\Models\User;
@@ -197,6 +186,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Apprenant;
+use App\Models\Stage;
+
 use App\Models\CampagneDeStage;
 
 use App\Models\DemandeDeStage;
@@ -244,6 +235,7 @@ class ApprenantController extends Controller
             'metier_id' => $validated['metier_id'],
         ]);
 
+
         return response()->json([
             'success' => true,
             'data' => $apprenant
@@ -251,51 +243,51 @@ class ApprenantController extends Controller
     }
 
         public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'nullable|string',
-    ]);
+        {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'nullable|string',
+            ]);
 
-    $user = Apprenant::where('email', $request->email)->first();
+            $user = Apprenant::where('email', $request->email)->first();
 
-    if (!$user) {
-        return response()->json([
-            'message' => 'Aucun utilisateur trouvé avec cet email.'
-        ], 401);
-    }
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Aucun utilisateur trouvé avec cet email.'
+                ], 401);
+            }
 
-    // 🔹 Cas 1 : utilisateur avec un mot de passe
-    if ($user->password && !empty($request->password)) {
-        if (!Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Mot de passe incorrect.'], 401);
-        }
-    }
-    // 🔹 Cas 2 : apprenant sans mot de passe (connexion via matricule)
-    elseif (!$user->password) {
-        // Vérifie si le champ password contient le matricule
-        if ($request->password !== $user->matricule) {
+            // 🔹 Cas 1 : utilisateur avec un mot de passe
+            if ($user->password && !empty($request->password)) {
+                if (!Hash::check($request->password, $user->password)) {
+                    return response()->json(['message' => 'Mot de passe incorrect.'], 401);
+                }
+            }
+            // 🔹 Cas 2 : apprenant sans mot de passe (connexion via matricule)
+            elseif (!$user->password) {
+                // Vérifie si le champ password contient le matricule
+                if ($request->password !== $user->matricule) {
+                    return response()->json([
+                        'message' => 'Matricule incorrect.'
+                    ], 401);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'Identifiants invalides.'
+                ], 401);
+            }
+
+            // ✅ Créer un token d’accès
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Matricule incorrect.'
-            ], 401);
+                'success' => true,
+                'data' => [
+                    'user' => $user,
+                    'token' => $token,
+                ],
+            ]);
         }
-    } else {
-        return response()->json([
-            'message' => 'Identifiants invalides.'
-        ], 401);
-    }
-
-    // ✅ Créer un token d’accès
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'user' => $user,
-            'token' => $token,
-        ],
-    ]);
-}
 
 
     // 📥 Importation depuis Excel
@@ -371,20 +363,59 @@ class ApprenantController extends Controller
     }
 
     // 🔹 Soumettre une demande de stage
+    // public function postuler(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'campagne_id' => 'required|exists:campagne_de_stages,id',
+    //         'entreprise_id' => 'required|exists:entreprises,id',
+    //         'adresse_1' => 'required|string',
+    //         'adresse_2' => 'nullable|string',
+    //     ]);
+
+    //     $data['etudiant_id'] = auth()->id();
+
+    //     $demande = DemandeDeStage::create($data);
+
+    //     return response()->json(['success' => true, 'data' => $demande], 201);
+    // }
+
+    /**
+     * 🔹 L’apprenant postule à une entreprise
+     */
     public function postuler(Request $request)
     {
-        $data = $request->validate([
+        $request->validate([
             'campagne_id' => 'required|exists:campagne_de_stages,id',
             'entreprise_id' => 'required|exists:entreprises,id',
-            'adresse_1' => 'required|string',
-            'adresse_2' => 'nullable|string',
+            'adresse_1' => 'required|string|max:255',
+            'adresse_2' => 'nullable|string|max:255',
         ]);
 
-        $data['etudiant_id'] = auth()->id();
+        $user = $request->user();
 
-        $demande = DemandeDeStage::create($data);
+        // Vérifie que la campagne correspond au métier de l’apprenant
+        $campagne = CampagneDeStage::findOrFail($request->campagne_id);
+        if ($campagne->metier_id !== $user->metier_id) {
+            return response()->json([
+                'message' => 'Vous ne pouvez pas postuler à cette campagne.'
+            ], 403);
+        }
 
-        return response()->json(['success' => true, 'data' => $demande], 201);
+        $demande = DemandeDeStage::create([
+            'etudiant_id' => $user->id,
+            'campagne_id' => $request->campagne_id,
+            'entreprise_id' => $request->entreprise_id,
+            'adresse_1' => $request->adresse_1,
+            'adresse_2' => $request->adresse_2,
+            'statut' => 'en_attente'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Votre demande de stage a été soumise avec succès 🎉',
+            'data' => $demande
+        ]);
+
     }
 
     // 🔹 Voir ses propres demandes
@@ -398,13 +429,52 @@ class ApprenantController extends Controller
     }
 
     // 🔹 Voir son stage validé
-    public function monStage()
+    // public function monStage()
+    // {
+    //     $stage = \App\Models\Stage::with(['entreprise', 'tuteur'])
+    //         ->where('etudiant_id', auth()->id())
+    //         ->first();
+
+    //     return response()->json(['success' => true, 'data' => $stage]);
+    // }
+
+      /**
+     * 🔹 Voir son stage validé (et ses infos)
+     */
+    public function monStage(Request $request)
     {
-        $stage = \App\Models\Stage::with(['entreprise', 'tuteur'])
-            ->where('etudiant_id', auth()->id())
+        $user = $request->user();
+
+        $stage = Stage::with(['entreprise', 'tuteur'])
+            ->where('etudiant_id', $user->id)
             ->first();
 
-        return response()->json(['success' => true, 'data' => $stage]);
+        return response()->json([
+            'success' => true,
+            'data' => $stage
+        ]);
+    }
+
+
+      /**
+     * 🔹 Campagnes ouvertes disponibles pour l’apprenant connecté
+     */
+    public function campagnesDisponibles(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'apprenant') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+            ->where('statut', 'ouvert')
+            ->with('entreprises', 'metier')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $campagnes
+        ]);
     }
 }
-    

@@ -31,12 +31,14 @@ class ChefDeMetierSeeder extends Seeder
             [
                 'nom' => 'Fall',
                 'prenom' => 'diakhou',
+                'password' => bcrypt('00000000'),
                 'email' => 'diakhou@gmail.com',
                 'metier_id' => 2, // Data Scientist
             ],
             [
                 'nom' => 'Sarr',
                 'prenom' => 'Mariama',
+                'password' => bcrypt('00000000'),
                 'email' => 'mariama@gmail.com',
                 'metier_id' => 3, // Designer UI/UX
             ],

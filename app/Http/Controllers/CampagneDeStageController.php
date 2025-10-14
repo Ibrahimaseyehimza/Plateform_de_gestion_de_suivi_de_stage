@@ -75,4 +75,49 @@ class CampagneDeStageController extends Controller
             ], 500);
         }
     }
+
+    // Récupérer les campagnes ouvertes pour un apprenant
+    // public function campagnesOuvertesPourApprenant(Request $request)
+    // {
+    //         dd($request->user());
+
+    //     $user = $request->user();
+
+    //     if ($user->role !== 'apprenant') {
+    //         return response()->json(['error' => 'Accès non autorisé'], 403);
+    //     }
+
+    //     $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+    //         ->where('statut', 'ouvert')
+    //         ->with(['entreprises', 'metier'])
+    //         ->get();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $campagnes
+    //     ]);
+    // }
+
+    public function campagnesOuvertesPourApprenant(Request $request)
+{
+    $user = $request->user();
+    if (!$user) {
+        return response()->json(['error' => 'Utilisateur non authentifié'], 401);
+    }
+
+    if ($user->role !== 'apprenant') {
+        return response()->json(['error' => 'Accès non autorisé'], 403);
+    }
+
+    $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+        ->where('statut', 'ouvert')
+        ->with(['entreprises', 'metier'])
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $campagnes
+    ]);
+}
+
 }

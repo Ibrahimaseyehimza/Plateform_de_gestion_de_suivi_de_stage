@@ -138,19 +138,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // });
 // });
 
-
-
-
-
-
-
-
 // ============================================================
 //  ROUTES CHEF DE DÉPARTEMENT
 // ============================================================
 
         Route::middleware(['auth:sanctum', 'role:chef_departement'])->group(function () {
-
                 // Métiers
             // Route::apiResource('v1/metiers', MetierController::class)->except('update');
 
@@ -162,8 +154,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
             // ==================== CHEFS DE MÉTIER ====================
             Route::apiResource('v1/chefs-de-metier', ChefDeMetierController::class);
 
-
-
              // ==================== ENTREPRISES ====================
             Route::post('v1/entreprises', [EntrepriseController::class, 'store']);
             Route::put('v1/entreprises/{id}', [EntrepriseController::class, 'update']);
@@ -172,36 +162,32 @@ Route::middleware(['auth:sanctum'])->group(function () {
             // ==================== RH ====================
             Route::apiResource('v1/rhs', RhController::class);
 
-
             // ==================== CAMPAGNES ====================
             Route::post('v1/campagnes', [CampagneDeStageController::class, 'store']);
             Route::put('v1/campagnes/{id}', [CampagneDeStageController::class, 'update']);
             Route::delete('v1/campagnes/{id}', [CampagneDeStageController::class, 'destroy']);
             Route::post('v1/campagnes/{id}/send-mails', [CampagneDeStageController::class, 'sendMails']);
 
+            // ==================== RH ====================
+            Route::apiResource('v1/rhs', RhController::class);
 
-              // ==================== RH ====================
-                Route::apiResource('v1/rhs', RhController::class);
-
-                // ==================== CAMPAGNES ====================
-                Route::post('v1/campagnes', [CampagneDeStageController::class, 'store']);
-                Route::put('v1/campagnes/{id}', [CampagneDeStageController::class, 'update']);
-                Route::delete('v1/campagnes/{id}', [CampagneDeStageController::class, 'destroy']);
-                Route::post('/v1/campagnes/{id}/send-mails', [CampagneDeStageController::class, 'sendMails']);
-
-
-                 // ==================== STAGES ====================
-                Route::post('v1/stages', [StageController::class, 'store']);
-                Route::put('v1/stages/{id}', [StageController::class, 'update']);
-                Route::delete('v1/stages/{id}', [StageController::class, 'destroy']);
-                Route::post('v1/stages/assign', [StageController::class, 'assign']);
-
-                // ==================== UTILISATEURS ====================
-                Route::post('v1/users', [UserController::class, 'store']);
-                Route::get('v1/users', [UserController::class, 'index']);
-                Route::delete('v1/users/{id}', [UserController::class, 'destroy']);
+            // ==================== CAMPAGNES ====================
+            Route::post('v1/campagnes', [CampagneDeStageController::class, 'store']);
+            Route::put('v1/campagnes/{id}', [CampagneDeStageController::class, 'update']);
+            Route::delete('v1/campagnes/{id}', [CampagneDeStageController::class, 'destroy']);
+            Route::post('/v1/campagnes/{id}/send-mails', [CampagneDeStageController::class, 'sendMails']);
 
 
+                // ==================== STAGES ====================
+            Route::post('v1/stages', [StageController::class, 'store']);
+            Route::put('v1/stages/{id}', [StageController::class, 'update']);
+            Route::delete('v1/stages/{id}', [StageController::class, 'destroy']);
+            Route::post('v1/stages/assign', [StageController::class, 'assign']);
+
+            // ==================== UTILISATEURS ====================
+            Route::post('v1/users', [UserController::class, 'store']);
+            Route::get('v1/users', [UserController::class, 'index']);
+            Route::delete('v1/users/{id}', [UserController::class, 'destroy']);
 
             // Routes supplémentaires pour les chefs de métier
             // Route::get('v1/chefs-de-metier/metiers/list', [ChefDeMetierController::class, 'getMetiers']);
@@ -240,7 +226,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             // Route::apiResource('/v1/stages', StageController::class);
 
 
-     })->middleware('role:chef_departement');
+    })->middleware('role:chef_departement');
 
 
      // ============================================================
@@ -253,42 +239,42 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
 
-
         // ============================================================
         //  ROUTES CHEF DE MÉTIER
         // ============================================================
-        Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier')->group(function () {
-            Route::get('v1/campagnes', [ChefDeMetierController::class, 'campagnes']);
-            Route::get('v1/entreprises', [ChefDeMetierController::class, 'entreprises']);
-            Route::get('v1/stages', [ChefDeMetierController::class, 'stages']);
-            Route::get('v1/campagnes/export', [CampagneDeStageController::class, 'export']);
+    Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier')->group(function () {
+        Route::get('v1/campagnes', [ChefDeMetierController::class, 'campagnes']);
+        Route::get('v1/entreprises', [ChefDeMetierController::class, 'entreprises']);
+        Route::get('v1/stages', [ChefDeMetierController::class, 'stages']);
+        Route::get('v1/campagnes/export', [CampagneDeStageController::class, 'export']);
 
 
-               // Apprenants
-            Route::get('v1/apprenants', [ApprenantController::class, 'index']);
-            Route::post('v1/apprenants', [ApprenantController::class, 'store']);
-            Route::post('v1/apprenants/import', [ApprenantController::class, 'import']);
-            Route::delete('v1/apprenants/{id}', [ApprenantController::class, 'destroy']);
+            // Apprenants
+        // Route::get('v1/apprenants', [ApprenantController::class, 'index']);
+        // Route::post('v1/apprenants', [ApprenantController::class, 'store']);
+        Route::get('v1/apprenants', [UserController::class, 'index']);
+        Route::post('v1/apprenants', [UserController::class, 'store']);
+        // Route::post('v1/apprenants/import', [ApprenantController::class, 'import']);
+        Route::post('v1/apprenants/import', [UserController::class, 'import']);
+        Route::delete('v1/apprenants/{id}', [ApprenantController::class, 'destroy']);
 
-            // Route::get('v1/etudiants', [ApprenantController::class, 'index']);
-            // Route::post('v1/etudiants/import', [ApprenantController::class, 'import'])
-                // ->middleware(['auth:sanctum', 'role:chef_metier']);
+        // Route::get('v1/etudiants', [ApprenantController::class, 'index']);
+        // Route::post('v1/etudiants/import', [ApprenantController::class, 'import'])
+            // ->middleware(['auth:sanctum', 'role:chef_metier']);
 
-
-
-// ============================================================
-        //  ROUTES POUR ÉTUDIANTS
         // ============================================================
-    Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('/v1/apprenant')->group(function () {
-        Route::get('/stage', [StageController::class, 'getMyStage']);
-        Route::post('/stage/rapport', [StageController::class, 'uploadRapport']);
-    });
+            //  ROUTES POUR ÉTUDIANTS
+            // ============================================================
+        Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('/v1/apprenant')->group(function () {
+            Route::get('/stage', [StageController::class, 'getMyStage']);
+            Route::post('/stage/rapport', [StageController::class, 'uploadRapport']);
+        });
 
 
-    // Routes publiques pour les apprenants
-Route::prefix('apprenant')->group(function () {
-    Route::post('login', [ApprenantAuthController::class, 'login']);
-});
+            // Routes publiques pour les apprenants
+        Route::prefix('apprenant')->group(function () {
+            Route::post('login', [ApprenantAuthController::class, 'login']);
+        });
 
         // Routes protégées pour les apprenants
         Route::middleware(['auth:sanctum'])->prefix('apprenant')->group(function () {
@@ -297,7 +283,12 @@ Route::prefix('apprenant')->group(function () {
             Route::post('change-password', [ApprenantAuthController::class, 'changePassword']);
         });
 
-        });
+    });
+           // Campagnes visibles pour un apprenant connecté
+    // Route::get('v1/apprenant/campagnes', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
+// Route::middleware('auth:sanctum')->get('v1/apprenant/campagnes', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
+
+Route::middleware('auth:apprenant')->get('v1/apprenant/campagnes', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
 
 
 
@@ -316,14 +307,31 @@ Route::prefix('apprenant')->group(function () {
     // });
 // ->middleware('role:chef_departement');
 
+//     Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1/apprenant')->group(function () {
+//     // Route::get('/campagnes', [ApprenantController::class, 'campagnesActives']);
+//     Route::get('/campagnes', [ApprenantController::class, 'campagnesDisponibles']);
+//     Route::post('/postuler', [ApprenantController::class, 'postuler']);
+//     Route::get('/demandes', [ApprenantController::class, 'mesDemandes']);
+//     Route::get('/stage', [ApprenantController::class, 'monStage']);
+// });
 
 
+Route::prefix('v1')->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function () {
 
-    Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1/apprenant')->group(function () {
-    Route::get('/campagnes_apprenant', [ApprenantController::class, 'campagnesActives']);
-    Route::post('/postuler', [ApprenantController::class, 'postuler']);
-    Route::get('/demandes', [ApprenantController::class, 'mesDemandes']);
-    Route::get('/stage', [ApprenantController::class, 'monStage']);
+        // Utilisateurs généraux
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::post('/etudiants/import', [UserController::class, 'import'])
+              ->middleware('role:chef_metier');
+
+        // Apprenant
+        Route::get('/apprenant/campagnes', [UserController::class, 'campagnesDisponibles']);
+        Route::post('/apprenant/postuler', [UserController::class, 'postuler']);
+        Route::get('/apprenant/demandes', [UserController::class, 'mesDemandes']);
+        Route::get('/apprenant/stage', [UserController::class, 'monStage']);
+    });
 });
 
 

@@ -6,6 +6,7 @@ use App\Models\RH;
 use App\Models\User;
 use App\Models\Entreprise;
 use Illuminate\Http\Request;
+use App\Models\CampagneDeStage;
 use App\Http\Requests\RhRequest;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -260,4 +261,39 @@ class RhController extends Controller
             ], 500);
         }
     }
+
+    public function indexForRh(Request $request)
+    {
+        $user = $request->user();
+
+        $campagnes = CampagneDeStage::whereHas('entreprises', function ($q) use ($user) {
+                $q->where('entreprises.id', $user->entreprise_id);
+            })
+            ->with(['metier'])
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $campagnes]);
+    }
+
+
+    public function validerCampagne(Request $request, $id)
+    {
+        $request->validate(['action' => 'required|in:accepter,refuser']);
+        $user = $request->user();
+
+        DB::table('campagne_stage_entreprise')
+            ->where('campagne_de_stage_id', $id)
+            ->where('entreprise_id', $user->entreprise_id)
+            ->update([
+                'statut' => $request->action === 'accepter' ? 'acceptee' : 'refusee',
+                'validated_by' => $user->id,
+                'validated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Campagne {$request->action}e avec succès"
+        ]);
+    }
+
 }

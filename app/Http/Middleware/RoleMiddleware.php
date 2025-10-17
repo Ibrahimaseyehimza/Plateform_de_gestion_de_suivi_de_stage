@@ -61,41 +61,124 @@ class RoleMiddleware
     // }
 
 
+    // public function handle(Request $request, Closure $next, ...$roles)
+    // {
+    //     $user = $request->user();
+
+    //     \Log::info('=== ROLE MIDDLEWARE ===', [
+    //         'user_exists' => $user ? 'OUI' : 'NON',
+    //         'user_class' => $user ? get_class($user) : 'NULL',
+    //         'user_id' => $user?->id,
+    //         'is_apprenant' => $user instanceof \App\Models\Apprenant,
+    //         'required_roles' => $roles,
+    //         'request_path' => $request->path(),
+    //     ]);
+
+    //     if (!$user) {
+    //         \Log::error('Pas d\'utilisateur authentifié');
+    //         return response()->json(['message' => 'Non authentifié'], 401);
+    //     }
+
+    //     $userRole = $user instanceof \App\Models\Apprenant ? 'apprenant' : ($user->role ?? null);
+
+    //     \Log::info('Role détecté:', ['role' => $userRole]);
+
+    //     if (!$userRole || !in_array($userRole, $roles)) {
+    //         \Log::error('Accès refusé', [
+    //             'user_role' => $userRole,
+    //             'required' => $roles
+    //         ]);
+    //         return response()->json([
+    //             'message' => 'Accès non autorisé',
+    //             'your_role' => $userRole,
+    //             'required_roles' => $roles
+    //         ], 403);
+    //     }
+
+    //     \Log::info('Accès autorisé ✅');
+    //     return $next($request);
+    // }
+
+    // public function handle(Request $request, Closure $next, ...$roles)
+    // {
+    //     $user = $request->user();
+
+    //     \Log::info('=== ROLE MIDDLEWARE ===', [
+    //         'user_exists' => $user ? 'OUI' : 'NON',
+    //         'user_class' => $user ? get_class($user) : 'NULL',
+    //         'user_id' => $user?->id,
+    //         'user_role' => $user?->role, // ✅ AJOUT
+    //         'required_roles' => $roles,
+    //         'request_path' => $request->path(),
+    //     ]);
+
+    //     if (!$user) {
+    //         \Log::error('Pas d\'utilisateur authentifié');
+    //         return response()->json(['message' => 'Non authentifié'], 401);
+    //     }
+
+    //     // ✅ FIX : Toujours utiliser $user->role
+    //     $userRole = $user->role;
+
+    //     \Log::info('Role détecté:', ['role' => $userRole]);
+
+    //     if (!$userRole || !in_array($userRole, $roles)) {
+    //         \Log::error('Accès refusé', [
+    //             'user_role' => $userRole,
+    //             'required' => $roles
+    //         ]);
+    //         return response()->json([
+    //             'message' => 'Accès refusé',
+    //             'your_role' => $userRole,
+    //             'required_roles' => $roles
+    //         ], 403);
+    //     }
+
+    //     \Log::info('Accès autorisé ✅');
+    //     return $next($request);
+    // }
+
     public function handle(Request $request, Closure $next, ...$roles)
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        \Log::info('=== ROLE MIDDLEWARE ===', [
-            'user_exists' => $user ? 'OUI' : 'NON',
-            'user_class' => $user ? get_class($user) : 'NULL',
-            'user_id' => $user?->id,
-            'is_apprenant' => $user instanceof \App\Models\Apprenant,
-            'required_roles' => $roles,
-            'request_path' => $request->path(),
-        ]);
+    // 🔍 DEBUG COMPLET
+    \Log::info('=== ROLE MIDDLEWARE DEBUG COMPLET ===', [
+        'user_exists' => $user ? 'OUI' : 'NON',
+        'user_class' => $user ? get_class($user) : 'NULL',
+        'user_id' => $user?->id,
+        'user_email' => $user?->email,
+        'user_role' => $user?->role,
+        'user_ALL_ATTRIBUTES' => $user ? $user->getAttributes() : 'NULL', // 🔍 TOUS les champs
+        'user_toArray' => $user ? $user->toArray() : 'NULL', // 🔍 Version tableau
+        'required_roles' => $roles,
+        'request_path' => $request->path(),
+        'token_from_header' => $request->bearerToken(), // 🔍 Le token reçu
+    ]);
 
-        if (!$user) {
-            \Log::error('Pas d\'utilisateur authentifié');
-            return response()->json(['message' => 'Non authentifié'], 401);
-        }
-
-        $userRole = $user instanceof \App\Models\Apprenant ? 'apprenant' : ($user->role ?? null);
-
-        \Log::info('Role détecté:', ['role' => $userRole]);
-
-        if (!$userRole || !in_array($userRole, $roles)) {
-            \Log::error('Accès refusé', [
-                'user_role' => $userRole,
-                'required' => $roles
-            ]);
-            return response()->json([
-                'message' => 'Accès non autorisé',
-                'your_role' => $userRole,
-                'required_roles' => $roles
-            ], 403);
-        }
-
-        \Log::info('Accès autorisé ✅');
-        return $next($request);
+    if (!$user) {
+        \Log::error('Pas d\'utilisateur authentifié');
+        return response()->json(['message' => 'Non authentifié'], 401);
     }
+
+    $userRole = $user->role;
+
+    \Log::info('Role détecté:', ['role' => $userRole]);
+
+    if (!$userRole || !in_array($userRole, $roles)) {
+        \Log::error('Accès refusé', [
+            'user_role' => $userRole,
+            'required' => $roles
+        ]);
+        return response()->json([
+            'message' => 'Accès refusé',
+            'your_role' => $userRole,
+            'required_roles' => $roles,
+            'debug_all_user_data' => $user->getAttributes() // 🔍 Pour voir TOUT
+        ], 403);
+    }
+
+    \Log::info('Accès autorisé ✅');
+    return $next($request);
+}
 }

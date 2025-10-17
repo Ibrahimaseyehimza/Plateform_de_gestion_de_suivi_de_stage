@@ -35,23 +35,47 @@ class CampagneDeStageController extends Controller
 
         $campagne = CampagneDeStage::create($validated);
 
-        // Lier les entreprises
-        $campagne->entreprises()->attach($validated['entreprise_ids']);
+        foreach ($validated['entreprises'] as $entrepriseId) {
+            DB::table('campagne_stage_entreprise')->insert([
+                'campagne_de_stage_id' => $campagne->id,
+                'entreprise_id' => $entrepriseId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        // 🚀 Envoi de mail aux apprenants du métier
-        $apprenants = User::where('role', 'apprenant')
-                          ->where('metier_id', $validated['metier_id'])
-                          ->get();
+            // 📨 Envoi du mail au RH de cette entreprise
+            $rh = User::where('entreprise_id', $entrepriseId)
+                    ->where('role', 'rh')
+                    ->first();
 
-        foreach ($apprenants as $apprenant) {
-            Mail::to($apprenant->email)->send(new CampagneCreeeMail($campagne));
+            if ($rh) {
+                Mail::to($rh->email)->queue(new CampagneNotificationRHMail($rh, $campagne));
+            }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Campagne créée avec succès et notifications envoyées',
-            'data' => $campagne->load('metier', 'entreprises')
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Campagne créée avec succès et notifications envoyées aux RH.',
+                'data' => $campagne
+            ])->setStatusCode(201);
+
+        // Lier les entreprises
+        // $campagne->entreprises()->attach($validated['entreprise_ids']);
+
+        // 🚀 Envoi de mail aux apprenants du métier
+        // $apprenants = User::where('role', 'apprenant')
+        //                   ->where('metier_id', $validated['metier_id'])
+        //                   ->get();
+
+        // foreach ($apprenants as $apprenant) {
+        //     Mail::to($apprenant->email)->send(new CampagneCreeeMail($campagne));
+        // }
+
+        // return response()->json([
+        //     'success' => true,
+        //     'message' => 'Campagne créée avec succès et notifications envoyées',
+        //     'data' => $campagne->load('metier', 'entreprises')
+        // ], 201);
     }
     /**
      * Supprimer une campagne de stage c'est que j'ai ajouter
@@ -76,48 +100,89 @@ class CampagneDeStageController extends Controller
         }
     }
 
-    // Récupérer les campagnes ouvertes pour un apprenant
-    // public function campagnesOuvertesPourApprenant(Request $request)
-    // {
-    //         dd($request->user());
 
-    //     $user = $request->user();
+      /**
+     * Afficher une campagne spécifique
+     */
+    public function show($id)
+    {
+        try {
+            $campagne = \App\Models\CampagneDeStage::findOrFail($id);
 
-    //     if ($user->role !== 'apprenant') {
-    //         return response()->json(['error' => 'Accès non autorisé'], 403);
-    //     }
+            return response()->json([
+                'success' => true,
+                'data' => $campagne
+            ], 200);
 
-    //     $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
-    //         ->where('statut', 'ouvert')
-    //         ->with(['entreprises', 'metier'])
-    //         ->get();
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $campagnes
-    //     ]);
-    // }
-
-    public function campagnesOuvertesPourApprenant(Request $request)
-{
-    $user = $request->user();
-    if (!$user) {
-        return response()->json(['error' => 'Utilisateur non authentifié'], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Campagne non trouvée'
+            ], 404);
+        }
     }
 
-    if ($user->role !== 'apprenant') {
-        return response()->json(['error' => 'Accès non autorisé'], 403);
+    public function campagnesOuvertesPourApprenant()
+    {
+        try {
+            \Log::info('🔍 DEBUT - Recherche campagnes ouvertes');
+
+            // ✅ CORRECTION: utiliser 'entreprises' au pluriel
+            $campagnes = CampagneDeStage::where('statut', 'ouverte')
+                ->with(['entreprises', 'metier'])  // ← CORRIGÉ ICI
+                ->get();
+
+            \Log::info('📊 Campagnes ouvertes trouvées: ' . $campagnes->count());
+
+            if ($campagnes->isEmpty()) {
+                \Log::info('ℹ️ Aucune campagne ouverte trouvée');
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'Aucune campagne ouverte trouvée'
+                ], 200);
+            }
+
+            \Log::info('✅ SUCCES - Campagnes récupérées');
+            return response()->json([
+                'success' => true,
+                'data' => $campagnes,
+                'count' => $campagnes->count(),
+                'message' => 'Campagnes récupérées avec succès'
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ ERREUR dans campagnesOuvertesPourApprenant: ' . $e->getMessage());
+            \Log::error('📁 File: ' . $e->getFile());
+            \Log::error('📍 Line: ' . $e->getLine());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
-        ->where('statut', 'ouvert')
-        ->with(['entreprises', 'metier'])
-        ->get();
 
-    return response()->json([
-        'success' => true,
-        'data' => $campagnes
-    ]);
-}
+public function campagnesDisponibles(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'apprenant') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+            ->where('statut', 'ouverte')
+            ->with('entreprises', 'metier')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $campagnes
+        ]);
+    }
+
+
 
 }

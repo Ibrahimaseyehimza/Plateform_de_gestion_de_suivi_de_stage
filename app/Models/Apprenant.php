@@ -66,12 +66,29 @@ class Apprenant extends Authenticatable // Pour l'authentification
         // 'maitre_de_stage_id',
     ];
 
+     // Ajoutez cet accessor pour retourner automatiquement "apprenant"
+    public function getRoleAttribute()
+    {
+        return 'apprenant';
+    }
+
+    // Ajoutez aussi cet accessor pour le "name" utilisé lors de la connexion
+    public function getNameAttribute()
+    {
+        return $this->prenom . ' ' . $this->nom;
+    }
+
+    // Ajoutez ceci pour que l'attribut "role" apparaisse dans toArray()
+    protected $appends = ['role', 'name'];
+
+
+
     protected $hidden = [
         'password',
     ];
 
     protected $casts = [
-        'password' => 'hashed', // Laravel 10+
+        'password' => 'hashed',
     ];
 
     public function metier()
@@ -83,4 +100,6 @@ class Apprenant extends Authenticatable // Pour l'authentification
     {
         return $this->belongsTo(MaitreDeStage::class);
     }
+
+
 }

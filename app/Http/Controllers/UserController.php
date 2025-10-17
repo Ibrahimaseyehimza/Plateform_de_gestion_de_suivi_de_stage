@@ -111,19 +111,45 @@ class UserController extends Controller
     // }
 
        // 📋 Récupérer tous les apprenants
-        public function index()
-        {
-            $apprenants = Apprenant::with('metier', 'maitreDeStage')
-                ->orderBy('created_at', 'desc')
-                ->get();
+        // public function index()
+        // {
+        //     $apprenants = Apprenant::with('metier', 'maitreDeStage')
+        //         ->orderBy('created_at', 'desc')
+        //         ->get();
 
-            \Log::info('Nombre d\'apprenants trouvés: ' . $apprenants->count());
+        //     \Log::info('Nombre d\'apprenants trouvés: ' . $apprenants->count());
 
-            return response()->json([
-                'success' => true,
-                'data' => $apprenants
-            ], 200);
-        }
+        //     return response()->json([
+        //         'success' => true,
+        //         'data' => $apprenants
+        //     ], 200);
+        // }
+
+         /**
+     * 📋 Récupérer tous les apprenants depuis la table users
+     * CORRECTION: Au lieu de récupérer depuis la table Apprenant (qui était vide),
+     * on récupère maintenant depuis la table User avec le filtre role = 'apprenant'
+     * car c'est là que les données sont importées
+     */
+    public function index()
+    {
+        // CORRECTION LIGNE 1: Ajouter ->where('role', 'apprenant')
+        // Cela récupère SEULEMENT les utilisateurs qui sont des apprenants
+        // Avant: Apprenant::with('metier', 'maitreDeStage')
+        // Après: User::where('role', 'apprenant')->with('metier')
+        $apprenants = User::where('role', 'apprenant')
+            ->with('metier')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        \Log::info('Nombre d\'apprenants trouvés: ' . $apprenants->count());
+
+        return response()->json([
+            'success' => true,
+            'data' => $apprenants
+        ], 200);
+    }
+
 
     /**
      * ➕ Créer un utilisateur (tous rôles confondus)

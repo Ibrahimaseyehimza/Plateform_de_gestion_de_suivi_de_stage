@@ -19,8 +19,6 @@ class User extends Authenticatable
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
-     *
-     *
      */
 
     const ROLE_CHEF_DEPARTEMENT = 'chef_departement';
@@ -29,9 +27,9 @@ class User extends Authenticatable
     const ROLE_RH = 'rh';
     const ROLE_APPRENANT = 'apprenant';
 
-
     protected $fillable = [
         'name',
+        // 'prenom',
         'email',
         'matricule',
         'password',
@@ -39,8 +37,8 @@ class User extends Authenticatable
         'must_change_password',
         // 'departement_id',
         'metier_id',
-        'entreprise_id'
-
+        'entreprise_id',
+        // 'invitation_key',
     ];
 
     /**
@@ -63,8 +61,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-
-     // Relations
+    // Relations
     // public function departement()
     // {
     //     return $this->belongsTo(Departement::class);
@@ -77,7 +74,7 @@ class User extends Authenticatable
 
     // public function entreprise()
     // {
-    //     return $this->bolongsTo(Entreprise::class);
+    //     return $this->belongsTo(Entreprise::class);  // ✅ Corrigé : bolongsTo → belongsTo
     // }
 
     /**
@@ -92,5 +89,4 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Entreprise::class, 'entreprise_id');
     }
-
 }

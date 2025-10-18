@@ -41,16 +41,19 @@ Route::get('v1/departements', [DepartementController::class, 'index']);
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // Campagnes (lecture)
-    Route::get('v1/campagnes', [CampagneDeStageController::class, 'index']);
+    Route::get('v1/campagnes_global', [CampagneDeStageController::class, 'index']);
 
     // Entreprises (lecture)
-    Route::get('v1/entreprises', [EntrepriseController::class, 'index']);
+    Route::get('v1/entreprises_global', [EntrepriseController::class, 'index']);
     Route::get('v1/entreprises/{id}', [EntrepriseController::class, 'show']);
     Route::get('v1/metiers/{metier}/entreprises', [EntrepriseController::class, 'getByMetier']);
 
     // Stages (lecture)
-    Route::get('v1/stages', [StageController::class, 'index']);
+    Route::get('v1/stages_global', [StageController::class, 'index']);
     Route::get('v1/stages/{id}', [StageController::class, 'show']);
+
+
+    Route::get('v1/metiers', [MetierController::class, 'index']);
 
     // Déconnexion
     Route::post('v1/logout', [AuthController::class, 'logout']);
@@ -135,11 +138,16 @@ Route::middleware(['auth:sanctum', 'role:chef_departement'])->prefix('v1')->grou
 
 Route::middleware(['auth:sanctum', 'role:rh'])->prefix('v1')->group(function () {
     Route::apiResource('maitres', MaitreStageController::class);
-    Route::get('rh/campagnes', [RhController::class, 'campagnesActives']);
+    // Route::get('rh/campagnes', [RhController::class, 'campagnesActives']);
+    // Route::get('rh/campagnes', [RhController::class, 'campagnesActives']);
     Route::get('rh/stages', [RhController::class, 'stages']);
 
-    Route::get('campagnes', [CampagneDeStageController::class, 'indexForRh']);
+    // Route::get('campagnes', [CampagneDeStageController::class, 'indexForRh']);
     Route::post('campagnes/{id}/validation', [CampagneDeStageController::class, 'validerCampagne']);
+
+    Route::get('/campagnes_rh', [CampagneDeStageController::class, 'campagnesPourEntreprise']);
+    Route::post('/campagnes/{id}/accepter', [CampagneDeStageController::class, 'accepterCampagne']);
+    Route::post('/campagnes/{id}/refuser', [CampagneDeStageController::class, 'refuserCampagne']);
 });
 
 // ============================================================

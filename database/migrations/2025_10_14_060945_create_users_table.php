@@ -19,15 +19,14 @@ return new class extends Migration
           Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            // $table->string('prenom')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('matricule')->unique();
+            $table->string('matricule')->nullable()->change();
             $table->string('password');
-
             $table->enum('role', [
                 'chef_departement', 'chef_metier', 'maitre_stage', 'rh', 'apprenant'
             ]);
-
             // $table->foreignId('departement_id')->nullable()->constrained('departements')->nullOnDelete();
             $table->foreignId('metier_id')->nullable()->constrained('metiers')->nullOnDelete();
             $table->foreignId('entreprise_id')->nullable()->constrained()->nullOnDelete();

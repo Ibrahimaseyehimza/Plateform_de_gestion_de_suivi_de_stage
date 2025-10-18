@@ -44,6 +44,13 @@ class CampagneDeStage extends Model
         return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise');
     }
 
+        //Ajouter cette relation
+    public function chefDepartement()
+    {
+        return $this->belongsTo(User::class, 'chef_departement_id');
+        // Ajustez 'chef_departement_id' selon le nom de votre colonne
+    }
+
 
 
 }

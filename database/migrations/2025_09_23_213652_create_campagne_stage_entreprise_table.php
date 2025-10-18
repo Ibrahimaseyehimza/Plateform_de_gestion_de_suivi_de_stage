@@ -16,7 +16,9 @@ return new class extends Migration
             $table->foreignId('campagne_de_stage_id')->constrained('campagne_de_stages')->onDelete('cascade');
             // $table->foreignId('entreprise_id')->constrained()->onDelete('cascade');
                 $table->foreignId('entreprise_id')->constrained('entreprises')->onDelete('cascade');
-
+                $table->enum('statut', ['en_attente', 'acceptée', 'refusée'])->default('en_attente');
+                $table->integer('nb_places')->nullable();
+                $table->text('message_refus')->nullable();
             $table->timestamps();
         });
     }

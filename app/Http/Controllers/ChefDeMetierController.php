@@ -27,6 +27,17 @@ class ChefDeMetierController extends Controller
         ]);
     }
 
+    // public function index()
+    // {
+    //     $metiers = Metier::all();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $metiers
+    //     ]);
+    // }
+
+
     // Créer un chef de métier
     // public function store(Request $request)
     // {
@@ -82,13 +93,101 @@ class ChefDeMetierController extends Controller
     // }
 
 
-    public function store(Request $request)
+//     public function store(Request $request)
+// {
+//     // Validation
+//     $validator = Validator::make($request->all(), [
+//         'nom' => 'required|string|max:255',
+//         'prenom' => 'required|string|max:255',
+//         'email' => 'required|email|unique:chef_de_metiers,email|unique:users,email',
+//         'password' => 'required|string|min:8|confirmed',
+//         'metier_id' => 'required|exists:metiers,id'
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'success' => false,
+//             'errors' => $validator->errors()
+//         ], 422);
+//     }
+
+//     try {
+//         \DB::beginTransaction();
+
+//         // Créer l'utilisateur d'abord
+//         $user = User::create([
+//             'name' => $request->prenom . ' ' . $request->nom,
+//             'email' => $request->email,
+//             'password' => Hash::make($request->password),
+//             'role' => 'chef_metier'
+//         ]);
+
+//         // Créer le chef de métier AVEC le password
+//         $chef = ChefDeMetier::create([
+//             'nom' => $request->nom,
+//             'prenom' => $request->prenom,
+//             'email' => $request->email,
+//             'password' => Hash::make($request->password), // ✅ AJOUTER CETTE LIGNE
+//             'metier_id' => $request->metier_id
+//         ]);
+
+//         \DB::commit();
+
+//         // Recharger avec la relation
+//         $chef->load('metier');
+
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Chef de métier créé avec succès',
+//             'data' => $chef
+//         ], 201);
+
+//     } catch (\Illuminate\Database\QueryException $e) {
+//         \DB::rollBack();
+
+//         if ($e->getCode() == 23000) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Cet email existe déjà',
+//                 'error' => 'Email déjà utilisé'
+//             ], 409);
+//         }
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Erreur lors de la création',
+//             'error' => $e->getMessage()
+//         ], 500);
+
+//     } catch (\Exception $e) {
+//         \DB::rollBack();
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Erreur lors de la création',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+public function store(Request $request)
 {
-    // Validation
+    // ✅ Vérification manuelle au début
+    if (User::where('email', $request->email)->exists() ||
+        ChefDeMetier::where('email', $request->email)->exists()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Cet email existe déjà',
+            'error' => 'Email déjà utilisé'
+        ], 409);
+    }
+
+    // Validation sans unique:users
     $validator = Validator::make($request->all(), [
         'nom' => 'required|string|max:255',
         'prenom' => 'required|string|max:255',
-        'email' => 'required|email|unique:chef_de_metiers,email|unique:users,email',
+        'email' => 'required|email',  // ✅ Pas de unique ici
         'password' => 'required|string|min:8|confirmed',
         'metier_id' => 'required|exists:metiers,id'
     ]);
@@ -103,26 +202,24 @@ class ChefDeMetierController extends Controller
     try {
         \DB::beginTransaction();
 
-        // Créer l'utilisateur d'abord
         $user = User::create([
             'name' => $request->prenom . ' ' . $request->nom,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'chef_metier'
+            'role' => 'chef_metier',
+            'metier_id' => $request->metier_id  // ✅ Ajoutez ceci
         ]);
 
-        // Créer le chef de métier AVEC le password
         $chef = ChefDeMetier::create([
             'nom' => $request->nom,
             'prenom' => $request->prenom,
             'email' => $request->email,
-            'password' => Hash::make($request->password), // ✅ AJOUTER CETTE LIGNE
+            'password' => Hash::make($request->password),
             'metier_id' => $request->metier_id
         ]);
 
         \DB::commit();
 
-        // Recharger avec la relation
         $chef->load('metier');
 
         return response()->json([
@@ -130,23 +227,6 @@ class ChefDeMetierController extends Controller
             'message' => 'Chef de métier créé avec succès',
             'data' => $chef
         ], 201);
-
-    } catch (\Illuminate\Database\QueryException $e) {
-        \DB::rollBack();
-
-        if ($e->getCode() == 23000) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cet email existe déjà',
-                'error' => 'Email déjà utilisé'
-            ], 409);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Erreur lors de la création',
-            'error' => $e->getMessage()
-        ], 500);
 
     } catch (\Exception $e) {
         \DB::rollBack();

@@ -20,10 +20,10 @@ class MetierController extends Controller
         // return response()->json(Metier::all());
 
          $metiers = Metier::all();
-        return response()->json([
-            'success' => true,
-            'data' => $metiers
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $metiers
+            ]);
 
         // $metiers = Metier::with(['chef_metier'])->get();
         // return response()->json($metiers);
@@ -82,6 +82,6 @@ class MetierController extends Controller
     public function destroy($id) {
     $metier = Metier::findOrFail($id);
     $metier->delete();
-    return response()->json(['message' => 'Métier supprimé']); // j'ai ajouter ca 
+    return response()->json(['message' => 'Métier supprimé']); // j'ai ajouter ca
 }
 }

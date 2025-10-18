@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\CampagneDeStage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class CampagneDeStageController extends Controller
@@ -164,7 +165,7 @@ class CampagneDeStageController extends Controller
     }
 
 
-public function campagnesDisponibles(Request $request)
+    public function campagnesDisponibles(Request $request)
     {
         $user = $request->user();
 
@@ -182,6 +183,42 @@ public function campagnesDisponibles(Request $request)
             'data' => $campagnes
         ]);
     }
+
+
+    public function campagnesPourEntreprise(Request $request)
+    {
+        $user = $request->user();
+
+        $campagnes = CampagneDeStage::whereHas('entreprises', function ($q) use ($user) {
+            $q->where('entreprises.id', $user->entreprise_id);
+        })
+        ->with(['metier', 'chefDepartement'])
+        ->orderBy('date_debut', 'desc')
+        ->get();
+
+        return response()->json(['success' => true, 'data' => $campagnes]);
+    }
+
+    public function accepterCampagne($id, Request $request)
+    {
+        $user = $request->user();
+        DB::table('campagne_stage_entreprise')
+            ->where('campagne_de_stage_id', $id)
+            ->where('entreprise_id', $user->entreprise_id)
+            ->update(['statut' => 'acceptée']);
+        return response()->json(['success' => true, 'message' => 'Campagne acceptée ✅']);
+    }
+
+    public function refuserCampagne($id, Request $request)
+    {
+        $user = $request->user();
+        DB::table('campagne_stage_entreprise')
+            ->where('campagne_de_stage_id', $id)
+            ->where('entreprise_id', $user->entreprise_id)
+            ->update(['statut' => 'refusée']);
+        return response()->json(['success' => true, 'message' => 'Campagne refusée ❌']);
+    }
+
 
 
 

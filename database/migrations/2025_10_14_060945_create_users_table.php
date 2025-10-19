@@ -12,17 +12,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-
-             // Supprimer la table users si elle existe
-        Schema::dropIfExists('users');
-
           Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            // $table->string('prenom')->nullable();
+            $table->string('prenom')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('matricule')->nullable()->change();
+            $table->string('matricule')->nullable();
             $table->string('password');
             $table->enum('role', [
                 'chef_departement', 'chef_metier', 'maitre_stage', 'rh', 'apprenant'
@@ -44,11 +40,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-          Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('must_change_password');
-            $table->dropConstrainedForeignId('departement_id');
-            $table->dropConstrainedForeignId('metier_id');
-        });
+        //   Schema::table('users', function (Blueprint $table) {
+        //     $table->dropColumn('must_change_password');
+        //     $table->dropConstrainedForeignId('departement_id');
+        //     $table->dropConstrainedForeignId('metier_id');
+        // });
+         Schema::dropIfExists('users');
     }
 };
 

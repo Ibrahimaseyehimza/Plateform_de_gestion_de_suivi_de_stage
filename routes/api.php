@@ -167,26 +167,3 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::delete('apprenants/{id}', [ApprenantController::class, 'destroy']);
 });
 
-// ============================================================
-// ROUTES DASHBOARD (exemples simples)
-// ============================================================
-
-Route::get('/dashboard/chef-metier', function () {
-    return "Bienvenue Chef de Métier";
-})->middleware('role:chef_metier');
-
-Route::get('/dashboard/maitre-stage', function () {
-    return "Bienvenue Maître de Stage";
-})->middleware('role:maitre_stage');
-
-Route::get('/dashboard/rh', function () {
-    return "Bienvenue RH";
-})->middleware('role:rh');
-
-Route::get('/dashboard/apprenant', function () {
-    return "Bienvenue Apprenant";
-})->middleware('role:apprenant');
-
-Route::get('/dashboard/gestion', function () {
-    return "Accès pour RH ou Chef de Département";
-})->middleware('role:rh,chef_departement');

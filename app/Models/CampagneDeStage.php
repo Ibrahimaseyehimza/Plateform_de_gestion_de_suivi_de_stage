@@ -21,28 +21,23 @@ class CampagneDeStage extends Model
     ];
 
 
-    // public function metiers() {
-    //     return $this->belongsToMany(Metier::class);
-    // }
-
-    // public function entreprises() {
-    //     return $this->belongsToMany(Entreprise::class);
-    // }
-
-
-    // public function metiers() {
-    //     return $this->belongsToMany(Metier::class, 'campagne_stage_metier');
-    // }
-
     // 🔗 Relation avec Metier
         public function metier()
         {
             return $this->belongsTo(Metier::class, 'metier_id');
         }
 
-    public function entreprises() {
-        return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise');
-    }
+    // public function entreprises() {
+    //     return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise');
+    // }
+
+    public function entreprises()
+        {
+            return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise')
+                ->withPivot('statut', 'nb_places', 'message_refus')
+                ->withTimestamps();
+        }
+
 
         //Ajouter cette relation
     public function chefDepartement()

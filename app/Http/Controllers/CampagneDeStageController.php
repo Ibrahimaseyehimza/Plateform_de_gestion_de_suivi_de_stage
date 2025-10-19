@@ -105,9 +105,9 @@ class CampagneDeStageController extends Controller
                 ->where('role', 'rh')
                 ->first();
 
-        if ($rh) {
-            Mail::to($rh->email)->queue(new CampagneNotificationRHMail($rh, $campagne));
-        }
+        // if ($rh) {
+        //     Mail::to($rh->email)->queue(new CampagneNotificationRHMail($rh, $campagne));
+        // }
     }
 
     return response()->json([
@@ -224,38 +224,113 @@ class CampagneDeStageController extends Controller
     }
 
 
+    // public function campagnesPourEntreprise(Request $request)
+    // {
+    //     $user = $request->user();
+
+    //     $campagnes = CampagneDeStage::whereHas('entreprises', function ($q) use ($user) {
+    //         $q->where('entreprises.id', $user->entreprise_id);
+    //     })
+    //     ->with(['metier', 'chefDepartement'])
+    //     ->orderBy('date_debut', 'desc')
+    //     ->get();
+
+    //     return response()->json(['success' => true, 'data' => $campagnes]);
+    // }
+
+    /**
+     * 🔹 Récupère les campagnes destinées à une entreprise (RH connecté)
+     */
     public function campagnesPourEntreprise(Request $request)
     {
         $user = $request->user();
+        $entrepriseId = $user->entreprise_id;
 
-        $campagnes = CampagneDeStage::whereHas('entreprises', function ($q) use ($user) {
-            $q->where('entreprises.id', $user->entreprise_id);
-        })
-        ->with(['metier', 'chefDepartement'])
-        ->orderBy('date_debut', 'desc')
-        ->get();
+        if (!$entrepriseId) {
+            return response()->json([
+                'success' => false,
+                'message' => "Aucune entreprise associée à cet utilisateur RH."
+            ], 403);
+        }
 
-        return response()->json(['success' => true, 'data' => $campagnes]);
+        // On récupère toutes les campagnes liées à cette entreprise
+        $campagnes = CampagneDeStage::whereHas('entreprises', function ($q) use ($entrepriseId) {
+                $q->where('entreprise_id', $entrepriseId);
+            })
+            ->with(['metier', 'entreprises' => function ($q) use ($entrepriseId) {
+                $q->where('entreprises.id', $entrepriseId);
+            }])
+            ->orderByDesc('date_debut')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $campagnes
+        ]);
     }
 
-    public function accepterCampagne($id, Request $request)
+    /**
+     * ✅ Le RH accepte une campagne
+     */
+    public function accepterCampagne(Request $request, $id)
     {
+        $request->validate([
+            'nb_places' => 'required|integer|min:1'
+        ]);
+
         $user = $request->user();
-        DB::table('campagne_stage_entreprise')
-            ->where('campagne_de_stage_id', $id)
-            ->where('entreprise_id', $user->entreprise_id)
-            ->update(['statut' => 'acceptée']);
-        return response()->json(['success' => true, 'message' => 'Campagne acceptée ✅']);
+        $entrepriseId = $user->entreprise_id;
+
+        $campagne = CampagneDeStage::findOrFail($id);
+
+        $campagne->entreprises()->updateExistingPivot($entrepriseId, [
+            'statut' => 'acceptée',
+            'nb_places' => $request->nb_places,
+            'message_refus' => null,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Campagne acceptée avec succès ✅",
+            'data' => [
+                'campagne_id' => $id,
+                'nb_places' => $request->nb_places,
+                'statut' => 'acceptee'
+            ]
+        ]);
     }
 
-    public function refuserCampagne($id, Request $request)
+    /**
+     * ❌ Le RH refuse une campagne
+     */
+    public function refuserCampagne(Request $request, $id)
     {
+        $request->validate([
+            'message_refus' => 'required|string|max:500'
+        ]);
+
         $user = $request->user();
-        DB::table('campagne_stage_entreprise')
-            ->where('campagne_de_stage_id', $id)
-            ->where('entreprise_id', $user->entreprise_id)
-            ->update(['statut' => 'refusée']);
-        return response()->json(['success' => true, 'message' => 'Campagne refusée ❌']);
+        $entrepriseId = $user->entreprise_id;
+
+        $campagne = CampagneDeStage::findOrFail($id);
+
+        $campagne->entreprises()->updateExistingPivot($entrepriseId, [
+            'statut' => 'refusee',
+            'nb_places' => null,
+            'message_refus' => $request->message_refus,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Campagne refusée avec justification ❌",
+            'data' => [
+                'campagne_id' => $id,
+                'message_refus' => $request->message_refus,
+                'statut' => 'refusee'
+            ]
+        ]);
     }
 
 

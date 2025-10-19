@@ -66,7 +66,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(function () {
 
     // 🔹 Campagnes disponibles pour l'apprenant
-    Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
+    // Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
+    Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
 
     // 🔹 Stage actuel de l'apprenant
     Route::get('apprenant/stage', [StageController::class, 'getMyStage']);
@@ -80,9 +81,11 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(funct
     // 🔹 Changer le mot de passe
     Route::post('apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
 
+    Route::post('apprenant/postuler', [UserController::class, 'postuler']);
+
+
     // 🔹 Logout
     Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
-
 
 });
 

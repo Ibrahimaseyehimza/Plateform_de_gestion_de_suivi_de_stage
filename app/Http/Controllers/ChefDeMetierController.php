@@ -8,6 +8,7 @@ use App\Models\Metier;
 use App\Models\Entreprise;
 use App\Models\ChefDeMetier;
 use Illuminate\Http\Request;
+use App\Models\DemandeDeStage;
 use App\Models\CampagneDeStage;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -326,4 +327,250 @@ public function store(Request $request)
 
         return response()->json(['success' => true, 'data' => $stages]);
     }
+
+    /**
+     * 📊 Statistiques globales du Chef de Métier
+     */
+    public function statistiques(Request $request)
+    {
+        $user = $request->user();
+        $metierId = $user->metier_id;
+
+        $totalApprenants = User::where('role', 'apprenant')
+            ->where('metier_id', $metierId)
+            ->count();
+
+        $totalDemandes = DemandeDeStage::whereHas('campagne', function ($q) use ($metierId) {
+            $q->where('metier_id', $metierId);
+        })->count();
+
+        $stagesValides = DemandeDeStage::whereHas('campagne', function ($q) use ($metierId) {
+            $q->where('metier_id', $metierId);
+        })->where('statut', 'valide')->count();
+
+        $entreprisesSaturees = DB::table('campagne_stage_entreprise')
+            ->join('campagne_de_stages', 'campagne_de_stages.id', '=', 'campagne_stage_entreprise.campagne_de_stage_id')
+            ->where('campagne_de_stages.metier_id', $metierId)
+            ->whereColumn('places_occupees', '>=', 'capacite_max')
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'totalApprenants' => $totalApprenants,
+                'totalDemandes' => $totalDemandes,
+                'stagesValides' => $stagesValides,
+                'entreprisesSaturees' => $entreprisesSaturees
+            ]
+        ]);
+    }
+
+    /**
+     * 📋 Liste des demandes de stage liées au métier
+     */
+    public function demandes(Request $request)
+    {
+        $user = $request->user();
+        $metierId = $user->metier_id;
+
+        $demandes = DemandeDeStage::with(['etudiant', 'campagne', 'entreprise'])
+            ->whereHas('campagne', function ($q) use ($metierId) {
+                $q->where('metier_id', $metierId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $demandes]);
+    }
+
+    /**
+     * 🏢 Entreprises disponibles (ayant encore des places)
+     */
+    public function entreprisesDisponibles(Request $request)
+    {
+        $user = $request->user();
+        $metierId = $user->metier_id;
+
+        $entreprises = DB::table('campagne_stage_entreprise')
+            ->join('campagne_de_stages', 'campagne_de_stages.id', '=', 'campagne_stage_entreprise.campagne_de_stage_id')
+            ->join('entreprises', 'entreprises.id', '=', 'campagne_stage_entreprise.entreprise_id')
+            ->where('campagne_de_stages.metier_id', $metierId)
+            ->where('campagne_stage_entreprise.statut', 'acceptée')
+            ->whereColumn('places_occupees', '<', 'capacite_max')
+            ->select(
+                'entreprises.id',
+                'entreprises.nom',
+                DB::raw('capacite_max - places_occupees as places_restantes')
+            )
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $entreprises]);
+    }
+
+    // ChefDeMetierController.php
+
+    public function accepterEtAffecterEtudiant(Request $request, $demandeId)
+    {
+        $validated = $request->validate([
+            'entreprise_id' => 'required|exists:entreprises,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $demande = DemandeDeStage::findOrFail($demandeId);
+
+            // 1️⃣ Vérifier que l'entreprise a accepté la campagne
+            $pivot = DB::table('campagne_stage_entreprise')
+                ->where('campagne_de_stage_id', $demande->campagne_id)
+                ->where('entreprise_id', $validated['entreprise_id'])
+                ->where('statut', 'acceptée')
+                ->first();
+
+            if (!$pivot) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ Cette entreprise n\'a pas accepté la campagne'
+                ], 400);
+            }
+
+            // 2️⃣ Vérifier la disponibilité des places
+            if ($pivot->places_occupees >= $pivot->capacite_max) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ Capacité maximale atteinte pour cette entreprise',
+                    'details' => [
+                        'entreprise' => $pivot->entreprise_id,
+                        'capacite_max' => $pivot->capacite_max,
+                        'places_occupees' => $pivot->places_occupees
+                    ]
+                ], 400);
+            }
+
+            // 3️⃣ Mettre à jour la demande
+            $demande->update([
+                'entreprise_id' => $validated['entreprise_id'],
+                'statut' => 'acceptee'
+            ]);
+
+            // 4️⃣ Incrémenter places_occupees
+            DB::table('campagne_stage_entreprise')
+                ->where('campagne_de_stage_id', $demande->campagne_id)
+                ->where('entreprise_id', $validated['entreprise_id'])
+                ->increment('places_occupees');
+
+            DB::commit();
+
+            // 5️⃣ (Optionnel) Envoyer une notification au RH
+            // $rh = User::where('entreprise_id', $validated['entreprise_id'])
+            //           ->where('role', 'rh')
+            //           ->first();
+            // Mail::to($rh->email)->send(new NouvelEtudiantAffecte($demande));
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Étudiant accepté et affecté avec succès',
+                'data' => [
+                    'demande' => $demande,
+                    'places_restantes' => $pivot->capacite_max - ($pivot->places_occupees + 1)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function reorienterEtudiant(Request $request, $demandeId)
+    {
+        $validated = $request->validate([
+            'nouvelle_entreprise_id' => 'required|exists:entreprises,id'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $demande = DemandeDeStage::findOrFail($demandeId);
+            $ancienneEntrepriseId = $demande->entreprise_id;
+
+            // Si l'étudiant était déjà accepté, libérer la place
+            if ($demande->statut === 'acceptee') {
+                DB::table('campagne_stage_entreprise')
+                    ->where('campagne_de_stage_id', $demande->campagne_id)
+                    ->where('entreprise_id', $ancienneEntrepriseId)
+                    ->decrement('places_occupees');
+            }
+
+            // Vérifier la disponibilité dans la nouvelle entreprise
+            $pivot = DB::table('campagne_stage_entreprise')
+                ->where('campagne_de_stage_id', $demande->campagne_id)
+                ->where('entreprise_id', $validated['nouvelle_entreprise_id'])
+                ->where('statut', 'acceptée')
+                ->first();
+
+            if (!$pivot || $pivot->places_occupees >= $pivot->capacite_max) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ Pas de place disponible dans cette entreprise'
+                ], 400);
+            }
+
+            // Réorienter
+            $demande->update([
+                'entreprise_id' => $validated['nouvelle_entreprise_id'],
+                'statut' => 'reorientee'
+            ]);
+
+            // Occuper une place dans la nouvelle entreprise
+            DB::table('campagne_stage_entreprise')
+                ->where('campagne_de_stage_id', $demande->campagne_id)
+                ->where('entreprise_id', $validated['nouvelle_entreprise_id'])
+                ->increment('places_occupees');
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Étudiant réorienté avec succès'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * ⚙️ Affecter un apprenant à une entreprise
+     */
+    public function affecter(Request $request, $id)
+    {
+        $request->validate([
+            'entreprise_id' => 'required|exists:entreprises,id'
+        ]);
+
+        $demande = DemandeDeStage::findOrFail($id);
+        $demande->entreprise_id = $request->entreprise_id;
+        $demande->statut = 'valide';
+        $demande->save();
+
+        // Mise à jour du compteur d’occupation
+        DB::table('campagne_stage_entreprise')
+            ->where('campagne_de_stage_id', $demande->campagne_id)
+            ->where('entreprise_id', $request->entreprise_id)
+            ->increment('places_occupees');
+
+        return response()->json(['success' => true, 'message' => 'Apprenant affecté avec succès.']);
+    }
+
+
 }

@@ -83,6 +83,8 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(funct
 
     Route::post('apprenant/postuler', [UserController::class, 'postuler']);
 
+    Route::get('apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
+
     // 🔹 Logout
     Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
 
@@ -167,5 +169,16 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::post('apprenants', [UserController::class, 'store']);
     Route::post('apprenants/import', [UserController::class, 'import']);
     Route::delete('apprenants/{id}', [ApprenantController::class, 'destroy']);
+
+    Route::get('/statistiques', [ChefDeMetierController::class, 'statistiques']);
+    Route::get('/demandes', [ChefDeMetierController::class, 'demandes']);
+    Route::get('/entreprises-disponibles', [ChefDeMetierController::class, 'entreprisesDisponibles']);
+    Route::put('/demandes/{id}/affecter', [ChefDeMetierController::class, 'affecter']);
+
+    Route::post('/demandes/{id}/accepter', [ChefDeMetierController::class, 'accepterEtAffecterEtudiant']);
+    // Route::post('/demandes/{id}/refuser', [ChefDeMetierController::class, 'refuserDemande']);
+    Route::post('/demandes/{id}/reorienter', [ChefDeMetierController::class, 'reorienterEtudiant']);
+
 });
+
 

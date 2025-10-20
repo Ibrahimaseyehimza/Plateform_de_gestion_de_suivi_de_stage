@@ -204,9 +204,6 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     // Soumissions
     Route::post('/soumettre-maitre-stage', [RHController::class, 'soumettreAuMaitreStage']);
     Route::get('/historique-soumissions', [RHController::class, 'historiqueSoumissions']);
-
-
-
 });
 
 

@@ -20,6 +20,7 @@ use App\Http\Controllers\MaitreStageController;
 use App\Http\Controllers\ChefDeMetierController;
 use App\Http\Controllers\CampagneDeStageController;
 use App\Http\Controllers\Auth\ApprenantAuthController;
+use App\Http\Controllers\NotificationController;
 
 // ============================================================
 //  ROUTES PUBLIQUES (sans authentification)
@@ -42,6 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Campagnes (lecture)
     Route::get('v1/campagnes_global', [CampagneDeStageController::class, 'index']);
+    Route::get('v1/campagnes/{id}', [CampagneDeStageController::class, 'show']);
 
     // Entreprises (lecture)
     Route::get('v1/entreprises_global', [EntrepriseController::class, 'index']);
@@ -52,11 +54,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('v1/stages_global', [StageController::class, 'index']);
     Route::get('v1/stages/{id}', [StageController::class, 'show']);
 
-
     Route::get('v1/metiers', [MetierController::class, 'index']);
 
     // Déconnexion
     Route::post('v1/logout', [AuthController::class, 'logout']);
+    
+    // Notifications (tous les utilisateurs authentifiés)
+    Route::get('v1/notifications', [NotificationController::class, 'index']);
 });
 
 // ============================================================
@@ -66,7 +70,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(function () {
 
     // 🔹 Campagnes disponibles pour l'apprenant
-    // Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesOuvertesPourApprenant']);
     Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
 
     // 🔹 Stage actuel de l'apprenant
@@ -87,13 +90,6 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(funct
 
     // 🔹 Logout
     Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
-
-});
-
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    // ✅ Maintenant on peut mettre les routes avec {id}
-    Route::get('v1/campagnes/{id}', [CampagneDeStageController::class, 'show']);
 });
 
 // ============================================================
@@ -142,11 +138,8 @@ Route::middleware(['auth:sanctum', 'role:chef_departement'])->prefix('v1')->grou
 
 Route::middleware(['auth:sanctum', 'role:rh'])->prefix('v1')->group(function () {
     Route::apiResource('maitres', MaitreStageController::class);
-    // Route::get('rh/campagnes', [RhController::class, 'campagnesActives']);
-    // Route::get('rh/campagnes', [RhController::class, 'campagnesActives']);
     Route::get('rh/stages', [RhController::class, 'stages']);
 
-    // Route::get('campagnes', [CampagneDeStageController::class, 'indexForRh']);
     Route::post('campagnes/{id}/validation', [CampagneDeStageController::class, 'validerCampagne']);
 
     Route::get('/campagnes_rh', [CampagneDeStageController::class, 'campagnesPourEntreprise']);
@@ -193,17 +186,31 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::put('/demandes/{id}/affecter', [ChefDeMetierController::class, 'affecter']);
 
     Route::post('/demandes/{id}/accepter', [ChefDeMetierController::class, 'accepterEtAffecterEtudiant']);
-    // Route::post('/demandes/{id}/refuser', [ChefDeMetierController::class, 'refuserDemande']);
     Route::post('/demandes/{id}/reorienter', [ChefDeMetierController::class, 'reorienterEtudiant']);
 
     Route::get('/affectations/export', [ChefDeMetierController::class, 'export']);
     Route::post('/affectations/envoyer-rh', [ChefDeMetierController::class, 'envoyerRh']);
     Route::get('/affectations', [ChefDeMetierController::class, 'affectations']);
 
-
     // Soumissions
     Route::post('/soumettre-maitre-stage', [RHController::class, 'soumettreAuMaitreStage']);
     Route::get('/historique-soumissions', [RHController::class, 'historiqueSoumissions']);
 });
 
+// ============================================================
+//  ROUTES MAÎTRE DE STAGE (✅ CORRIGÉ - Maintenant au bon endroit)
+// ============================================================
 
+Route::middleware(['auth:sanctum', 'role:maitre_stage'])->prefix('v1/maitre-stage')->group(function () {
+    // Liste des stages supervisés
+    Route::get('/stages', [MaitreStageController::class, 'getStages']);
+    
+    // Télécharger le rapport d'un stage
+    Route::get('/stages/{id}/rapport', [MaitreStageController::class, 'downloadRapport']);
+    
+    // Mettre à jour la note d'un stage
+    Route::put('/stages/{id}/note', [MaitreStageController::class, 'updateNote']);
+    
+    // Statistiques du maître de stage (optionnel)
+    Route::get('/statistiques', [MaitreStageController::class, 'statistiques']);
+});

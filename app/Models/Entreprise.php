@@ -66,6 +66,18 @@ class Entreprise extends Model
                     ->withTimestamps();
     }
 
+    public function etudiantsAffectes()
+    {
+        return $this->hasMany(\App\Models\DemandeDeStage::class, 'entreprise_id')
+            ->whereIn('statut', ['acceptee', 'reorientee']);
+    }
+
+    // public function rh()
+    // {
+    //     return $this->hasOne(\App\Models\User::class)->where('role', 'rh');
+    // }
+
+
 
 
 

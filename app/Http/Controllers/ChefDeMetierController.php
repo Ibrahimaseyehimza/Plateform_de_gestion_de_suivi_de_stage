@@ -10,10 +10,12 @@ use App\Models\ChefDeMetier;
 use Illuminate\Http\Request;
 use App\Models\DemandeDeStage;
 use App\Models\CampagneDeStage;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DBx;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Notifications\AffectesNotification;
+use Illuminate\Support\Facades\Notification;
 
 class ChefDeMetierController extends Controller
 {
@@ -28,217 +30,73 @@ class ChefDeMetierController extends Controller
         ]);
     }
 
-    // public function index()
-    // {
-    //     $metiers = Metier::all();
+    public function store(Request $request)
+    {
+        // ✅ Vérification manuelle au début
+        if (User::where('email', $request->email)->exists() ||
+            ChefDeMetier::where('email', $request->email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cet email existe déjà',
+                'error' => 'Email déjà utilisé'
+            ], 409);
+        }
 
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $metiers
-    //     ]);
-    // }
-
-
-    // Créer un chef de métier
-    // public function store(Request $request)
-    // {
-    //     // Validation
-    //     $validator = Validator::make($request->all(), [
-    //         'nom' => 'required|string|max:255',
-    //         'prenom' => 'required|string|max:255',
-    //         'email' => 'required|email|unique:chef_de_metiers,email',
-    //         'password' => 'required|string|min:8|confirmed',
-    //         'metier_id' => 'required|exists:metiers,id'
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'errors' => $validator->errors()
-    //         ], 422);
-    //     }
-
-    //     try {
-    //         // Créer le chef de métier
-    //         $chef = ChefDeMetier::create([
-    //             'nom' => $request->nom,
-    //             'prenom' => $request->prenom,
-    //             'email' => $request->email,
-    //             'metier_id' => $request->metier_id
-    //         ]);
-
-    //         // Créer l'utilisateur associé dans la table users
-    //         User::create([
-    //             'name' => $request->prenom . ' ' . $request->nom,
-    //             'email' => $request->email,
-    //             'password' => Hash::make($request->password),
-    //             'role' => 'chef_metier'
-    //         ]);
-
-    //         // Recharger avec la relation
-    //         $chef->load('metier');
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Chef de métier créé avec succès',
-    //             'data' => $chef
-    //         ], 201);
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Erreur lors de la création',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
-
-//     public function store(Request $request)
-// {
-//     // Validation
-//     $validator = Validator::make($request->all(), [
-//         'nom' => 'required|string|max:255',
-//         'prenom' => 'required|string|max:255',
-//         'email' => 'required|email|unique:chef_de_metiers,email|unique:users,email',
-//         'password' => 'required|string|min:8|confirmed',
-//         'metier_id' => 'required|exists:metiers,id'
-//     ]);
-
-//     if ($validator->fails()) {
-//         return response()->json([
-//             'success' => false,
-//             'errors' => $validator->errors()
-//         ], 422);
-//     }
-
-//     try {
-//         \DB::beginTransaction();
-
-//         // Créer l'utilisateur d'abord
-//         $user = User::create([
-//             'name' => $request->prenom . ' ' . $request->nom,
-//             'email' => $request->email,
-//             'password' => Hash::make($request->password),
-//             'role' => 'chef_metier'
-//         ]);
-
-//         // Créer le chef de métier AVEC le password
-//         $chef = ChefDeMetier::create([
-//             'nom' => $request->nom,
-//             'prenom' => $request->prenom,
-//             'email' => $request->email,
-//             'password' => Hash::make($request->password), // ✅ AJOUTER CETTE LIGNE
-//             'metier_id' => $request->metier_id
-//         ]);
-
-//         \DB::commit();
-
-//         // Recharger avec la relation
-//         $chef->load('metier');
-
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Chef de métier créé avec succès',
-//             'data' => $chef
-//         ], 201);
-
-//     } catch (\Illuminate\Database\QueryException $e) {
-//         \DB::rollBack();
-
-//         if ($e->getCode() == 23000) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Cet email existe déjà',
-//                 'error' => 'Email déjà utilisé'
-//             ], 409);
-//         }
-
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Erreur lors de la création',
-//             'error' => $e->getMessage()
-//         ], 500);
-
-//     } catch (\Exception $e) {
-//         \DB::rollBack();
-
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Erreur lors de la création',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
-
-public function store(Request $request)
-{
-    // ✅ Vérification manuelle au début
-    if (User::where('email', $request->email)->exists() ||
-        ChefDeMetier::where('email', $request->email)->exists()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Cet email existe déjà',
-            'error' => 'Email déjà utilisé'
-        ], 409);
-    }
-
-    // Validation sans unique:users
-    $validator = Validator::make($request->all(), [
-        'nom' => 'required|string|max:255',
-        'prenom' => 'required|string|max:255',
-        'email' => 'required|email',  // ✅ Pas de unique ici
-        'password' => 'required|string|min:8|confirmed',
-        'metier_id' => 'required|exists:metiers,id'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    try {
-        \DB::beginTransaction();
-
-        $user = User::create([
-            'name' => $request->prenom . ' ' . $request->nom,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'chef_metier',
-            'metier_id' => $request->metier_id  // ✅ Ajoutez ceci
+        // Validation sans unique:users
+        $validator = Validator::make($request->all(), [
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|email',  // ✅ Pas de unique ici
+            'password' => 'required|string|min:8|confirmed',
+            'metier_id' => 'required|exists:metiers,id'
         ]);
 
-        $chef = ChefDeMetier::create([
-            'nom' => $request->nom,
-            'prenom' => $request->prenom,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'metier_id' => $request->metier_id
-        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-        \DB::commit();
+        try {
+            \DB::beginTransaction();
 
-        $chef->load('metier');
+            $user = User::create([
+                'name' => $request->prenom . ' ' . $request->nom,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'chef_metier',
+                'metier_id' => $request->metier_id  // ✅ Ajoutez ceci
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Chef de métier créé avec succès',
-            'data' => $chef
-        ], 201);
+            $chef = ChefDeMetier::create([
+                'nom' => $request->nom,
+                'prenom' => $request->prenom,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'metier_id' => $request->metier_id
+            ]);
 
-    } catch (\Exception $e) {
-        \DB::rollBack();
+            \DB::commit();
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Erreur lors de la création',
-            'error' => $e->getMessage()
-        ], 500);
+            $chef->load('metier');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Chef de métier créé avec succès',
+                'data' => $chef
+            ], 201);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     // Supprimer un chef de métier
     public function destroy($id)
@@ -571,6 +429,134 @@ public function store(Request $request)
 
         return response()->json(['success' => true, 'message' => 'Apprenant affecté avec succès.']);
     }
+
+    public function entreprisesAvecEtudiants()
+    {
+        $entreprises = \App\Models\Entreprise::with([
+            'etudiantsAffectes.etudiant',
+            'etudiantsAffectes.campagne'
+        ])->get();
+
+        $data = $entreprises->map(function ($e) {
+            return [
+                'id' => $e->id,
+                'nom' => $e->nom,
+                'email_rh' => optional($e->rh)->email,
+                'etudiants' => $e->etudiantsAffectes->map(function ($d) {
+                    return [
+                        'id' => $d->etudiant->id,
+                        'nom' => $d->etudiant->name,
+                        'prenom' => $d->etudiant->prenom,
+                        'filiere' => $d->etudiant->filiere ?? null,
+                        'campagne' => $d->campagne->titre ?? null,
+                        'statut' => $d->statut,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+
+    public function envoyerListeEtudiantsAuRh($entrepriseId)
+    {
+        $entreprise = \App\Models\Entreprise::with(['etudiantsAffectes.etudiant', 'rh'])->findOrFail($entrepriseId);
+
+        $rh = $entreprise->rh;
+
+        if (!$rh) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun RH associé à cette entreprise.'
+            ], 400);
+        }
+
+        $etudiants = $entreprise->etudiantsAffectes
+            ->whereIn('statut', ['acceptee', 'reorientee'])
+            ->map(fn($d) => $d->etudiant->name . ' ' . $d->etudiant->prenom)
+            ->toArray();
+
+        $message = "Voici la liste des étudiants affectés à votre entreprise :\n- " . implode("\n- ", $etudiants);
+
+        // 🔔 Créer une notification unique pour le RH
+        \App\Models\Notification::create([
+            'user_id' => $rh->id,
+            'type' => 'liste_etudiants',
+            'titre' => '📋 Liste des étudiants affectés',
+            'message' => $message,
+            'entreprise_id' => $entrepriseId,
+            'lue' => false,
+        ]);
+
+        // (Optionnel) 📧 Envoyer un email au RH
+        // Mail::to($rh->email)->send(new ListeEtudiantsAffectesMail($entreprise, $etudiants));
+
+        return response()->json([
+            'success' => true,
+            'message' => '✅ Liste envoyée au RH avec succès',
+        ]);
+    }
+
+    public function affectations()
+    {
+        $affectations = DemandeDeStage::with(['etudiant', 'entreprise'])
+            ->whereIn('statut', ['acceptee', 'reorientee'])
+            ->get();
+
+        $entreprises = Entreprise::withCount(['stages as total_apprenants' => function ($q) {
+            $q->where('statut', 'acceptée');
+        }])->get(['id', 'nom', 'total_apprenants']);
+
+        return response()->json([
+            'data' => $affectations,
+            'entreprises' => $entreprises
+        ]);
+    }
+
+     public function envoyerRh(Request $request)
+    {
+        // ✅ On récupère les étudiants affectés
+        $affectations = DemandeDeStage::with(['etudiant', 'entreprise'])
+            ->whereIn('statut', ['acceptee', 'reorientee'])
+            ->get();
+
+        if ($affectations->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucune affectation trouvée à envoyer.'
+            ], 404);
+        }
+
+        // ✅ Construire le contenu de la notification
+        $message = "📋 Liste des étudiants affectés :\n\n";
+        foreach ($affectations as $demande) {
+            $message .= "- {$demande->etudiant->prenom} {$demande->etudiant->nom} → {$demande->entreprise->nom}\n";
+        }
+
+        // ✅ Récupérer tous les RH (ou un seul selon ta logique)
+        $rhs = User::where('role', 'rh')->get();
+
+        if ($rhs->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Aucun utilisateur RH trouvé.'
+            ], 404);
+        }
+
+        // ✅ Envoyer la notification
+        Notification::send($rhs, new AffectesNotification($message));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Liste envoyée avec succès au RH 🎉'
+        ]);
+    }
+
+
 
 
 }

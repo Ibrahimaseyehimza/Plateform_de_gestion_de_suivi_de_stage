@@ -152,6 +152,23 @@ Route::middleware(['auth:sanctum', 'role:rh'])->prefix('v1')->group(function () 
     Route::get('/campagnes_rh', [CampagneDeStageController::class, 'campagnesPourEntreprise']);
     Route::post('/campagnes/{id}/accepter', [CampagneDeStageController::class, 'accepterCampagne']);
     Route::post('/campagnes/{id}/refuser', [CampagneDeStageController::class, 'refuserCampagne']);
+
+    Route::get('rh/notifications', [RhController::class, 'notifications']);
+    Route::post('/notifications/{id}/marquer-lue', [RhController::class, 'marquerCommeLue']);
+    Route::put('/notifications/lire-tout', [RHController::class, 'marquerToutesCommeLues']);
+
+    // Étudiants affectés
+    Route::get('rh/etudiants-affectes', [RHController::class, 'etudiantsAffectes']);
+
+    // Maîtres de stage
+    Route::get('rh/maitres-stage', [RHController::class, 'maitresStageDisponibles']);
+
+    // Soumissions
+    Route::post('/soumettre-maitre-stage', [RHController::class, 'soumettreAuMaitreStage']);
+    Route::get('/historique-soumissions', [RHController::class, 'historiqueSoumissions']);
+
+    // Statistiques
+    Route::get('/statistiques', [RHController::class, 'statistiques']);
 });
 
 // ============================================================
@@ -178,6 +195,17 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::post('/demandes/{id}/accepter', [ChefDeMetierController::class, 'accepterEtAffecterEtudiant']);
     // Route::post('/demandes/{id}/refuser', [ChefDeMetierController::class, 'refuserDemande']);
     Route::post('/demandes/{id}/reorienter', [ChefDeMetierController::class, 'reorienterEtudiant']);
+
+    Route::get('/affectations/export', [ChefDeMetierController::class, 'export']);
+    Route::post('/affectations/envoyer-rh', [ChefDeMetierController::class, 'envoyerRh']);
+    Route::get('/affectations', [ChefDeMetierController::class, 'affectations']);
+
+
+    // Soumissions
+    Route::post('/soumettre-maitre-stage', [RHController::class, 'soumettreAuMaitreStage']);
+    Route::get('/historique-soumissions', [RHController::class, 'historiqueSoumissions']);
+
+
 
 });
 

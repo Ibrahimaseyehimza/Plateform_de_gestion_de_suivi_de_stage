@@ -48,9 +48,9 @@ class Entreprise extends Model
     //     return $this->belongsToMany(CampagneDeStage::class);
     // }
 
-    public function campagnes() {
-        return $this->belongsToMany(CampagneDeStage::class, 'campagne_stage_entreprise');
-    }
+    // public function campagnes() {
+    //     return $this->belongsToMany(CampagneDeStage::class, 'campagne_stage_entreprise');
+    // }
 
 
     // App\Models\Entreprise.php
@@ -59,7 +59,14 @@ class Entreprise extends Model
         return $this->belongsTo(Metier::class);
     }
 
-    
+    public function campagnes()
+    {
+        return $this->belongsToMany(CampagneDeStage::class, 'campagne_stage_entreprise')
+                    ->withPivot('capacite_max', 'postulants_count')
+                    ->withTimestamps();
+    }
+
+
 
 
 

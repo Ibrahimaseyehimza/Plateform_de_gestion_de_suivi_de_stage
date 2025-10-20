@@ -17,7 +17,9 @@ return new class extends Migration
             // $table->foreignId('entreprise_id')->constrained()->onDelete('cascade');
                 $table->foreignId('entreprise_id')->constrained('entreprises')->onDelete('cascade');
                 $table->enum('statut', ['en_attente', 'acceptée', 'refusée'])->default('en_attente');
-                $table->integer('nb_places')->nullable();
+                // $table->integer('nb_places')->nullable();
+                $table->integer('capacite_max')->default(0); // 🧠 Capacité définie par le RH
+                $table->integer('postulants_count')->default(0);
                 $table->text('message_refus')->nullable();
             $table->timestamps();
         });

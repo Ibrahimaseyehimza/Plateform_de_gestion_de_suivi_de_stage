@@ -83,7 +83,6 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(funct
 
     Route::post('apprenant/postuler', [UserController::class, 'postuler']);
 
-
     // 🔹 Logout
     Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
 

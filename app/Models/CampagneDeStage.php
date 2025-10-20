@@ -32,12 +32,11 @@ class CampagneDeStage extends Model
     // }
 
     public function entreprises()
-        {
-            return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise')
-                ->withPivot('statut', 'nb_places', 'message_refus')
-                ->withTimestamps();
-        }
-
+    {
+        return $this->belongsToMany(Entreprise::class, 'campagne_stage_entreprise')
+            ->withPivot('statut', 'capacite_max', 'message_refus', 'postulants_count')
+            ->withTimestamps();
+    }
 
         //Ajouter cette relation
     public function chefDepartement()

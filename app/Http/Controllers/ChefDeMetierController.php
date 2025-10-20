@@ -10,6 +10,7 @@ use App\Models\ChefDeMetier;
 use Illuminate\Http\Request;
 use App\Models\DemandeDeStage;
 use App\Models\CampagneDeStage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\DBx;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;

@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Tache extends Model
 {
@@ -11,9 +12,12 @@ class Tache extends Model
 
     protected $fillable = [
         'stage_id',
+         'maitre_stage_id',
+        'etudiant_id',
         'titre',
         'description',
-        'dateLimite',
+        'date_echeance',
+        'statut',
     ];
 
 
@@ -26,4 +30,17 @@ class Tache extends Model
     {
         return $this->hasMany(Livrable::class);
     }
+
+     public function maitre()
+    {
+        return $this->belongsTo(User::class, 'maitre_stage_id');
+    }
+
+    public function etudiant()
+    {
+        return $this->belongsTo(User::class, 'etudiant_id');
+    }
+
+
+
 }

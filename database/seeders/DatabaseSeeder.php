@@ -108,10 +108,12 @@ $this->call([
 
 
         // DepartementSeeder::class,
-        MetierSeeder::class,
-        ChefDeMetierSeeder::class,
-        EntrepriseSeeder::class,
+        // MetierSeeder::class,
+        // ChefDeMetierSeeder::class,
+        // EntrepriseSeeder::class,
 
+        StageSeeder::class,
+        
         // RHSeeder::class,
 
 

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\SoumissionMaitreStage;
 use App\Http\Requests\UpdateRHRequest;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\AffectesMaitreNotification;
 
 class RhController extends Controller
 {
@@ -587,6 +588,25 @@ class RhController extends Controller
             'success' => true,
             'data' => $maitresStage
         ]);
+    }
+
+
+    public function notifierMaitreStage($entrepriseId)
+    {
+        $entreprise = Entreprise::with(['maitreStage', 'etudiants'])->findOrFail($entrepriseId);
+
+        // Le maitre de stage lié à cette entreprise
+        $maitre = $entreprise->maitreStage; // Assure-toi d’avoir une relation "maitreStage()" dans le modèle Entreprise
+
+        if (!$maitre) {
+            return response()->json(['error' => 'Aucun maître de stage trouvé pour cette entreprise.'], 404);
+        }
+
+        $etudiants = $entreprise->etudiants; // Relation "etudiants()" à créer aussi
+
+        $maitre->notify(new AffectesMaitreNotification($etudiants, $entreprise));
+
+        return response()->json(['success' => true, 'message' => 'Notification envoyée au maître de stage.']);
     }
 
 }

@@ -77,6 +77,17 @@ class Entreprise extends Model
     //     return $this->hasOne(\App\Models\User::class)->where('role', 'rh');
     // }
 
+    public function maitreStage()
+    {
+        return $this->hasOne(User::class, 'entreprise_id')->where('role', 'maitre_stage');
+    }
+
+    public function etudiants()
+    {
+        return $this->hasMany(User::class, 'entreprise_id')->where('role', 'apprenant');
+    }
+
+
 
 
 

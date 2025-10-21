@@ -58,7 +58,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Déconnexion
     Route::post('v1/logout', [AuthController::class, 'logout']);
-    
+
     // Notifications (tous les utilisateurs authentifiés)
     Route::get('v1/notifications', [NotificationController::class, 'index']);
 });
@@ -204,13 +204,19 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
 Route::middleware(['auth:sanctum', 'role:maitre_stage'])->prefix('v1/maitre-stage')->group(function () {
     // Liste des stages supervisés
     Route::get('/stages', [MaitreStageController::class, 'getStages']);
-    
+
     // Télécharger le rapport d'un stage
     Route::get('/stages/{id}/rapport', [MaitreStageController::class, 'downloadRapport']);
-    
+
     // Mettre à jour la note d'un stage
     Route::put('/stages/{id}/note', [MaitreStageController::class, 'updateNote']);
-    
+
     // Statistiques du maître de stage (optionnel)
     Route::get('/statistiques', [MaitreStageController::class, 'statistiques']);
+
+    Route::get('etudiants-affectes', [MaitreStageController::class, 'etudiantsAffectes']);
+
+    Route::get('/taches', [TacheController::class, 'index']);
+    Route::post('/taches', [TacheController::class, 'store']);
+
 });

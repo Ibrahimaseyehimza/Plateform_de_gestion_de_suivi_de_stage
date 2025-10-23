@@ -20,6 +20,7 @@ use App\Http\Controllers\MaitreStageController;
 use App\Http\Controllers\ChefDeMetierController;
 use App\Http\Controllers\CampagneDeStageController;
 use App\Http\Controllers\Auth\ApprenantAuthController;
+use App\Http\Controllers\chefDeDepartementController;
 use App\Http\Controllers\NotificationController;
 
 // ============================================================
@@ -67,29 +68,61 @@ Route::middleware(['auth:sanctum'])->group(function () {
 //  ROUTES APPRENANT
 // ============================================================
 
-Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(function () {
+// Route::middleware(['auth:sanctum', 'role:apprenant'])->prefix('v1')->group(function () {
+
+//     // 🔹 Campagnes disponibles pour l'apprenant
+//     Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+//     // 🔹 Stage actuel de l'apprenant
+//     Route::get('apprenant/stage', [StageController::class, 'getMyStage']);
+
+//     // 🔹 Upload rapport de stage
+//     Route::post('apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
+
+//     // 🔹 Infos sur l'utilisateur connecté
+//     Route::get('apprenant/me', [ApprenantAuthController::class, 'me']);
+
+//     // 🔹 Changer le mot de passe
+//     Route::post('apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
+
+//     Route::post('apprenant/postuler', [UserController::class, 'postuler']);
+
+//     Route::get('apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
+
+//     // 🔹 Logout
+//     Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
+// });
+
+
+// ============================================================
+//  ROUTES APPRENANT
+// ============================================================
+
+Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
 
     // 🔹 Campagnes disponibles pour l'apprenant
-    Route::get('campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+    // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+    Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+        Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
 
     // 🔹 Stage actuel de l'apprenant
-    Route::get('apprenant/stage', [StageController::class, 'getMyStage']);
+    Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
 
     // 🔹 Upload rapport de stage
-    Route::post('apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
+    Route::post('v1/apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
 
     // 🔹 Infos sur l'utilisateur connecté
-    Route::get('apprenant/me', [ApprenantAuthController::class, 'me']);
+    Route::get('v1/apprenant/me', [ApprenantAuthController::class, 'me']);
 
     // 🔹 Changer le mot de passe
-    Route::post('apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
+    Route::post('v1/apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
 
-    Route::post('apprenant/postuler', [UserController::class, 'postuler']);
+    Route::post('v1/apprenant/postuler', [UserController::class, 'postuler']);
 
-    Route::get('apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
+    Route::get('v1/apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
 
     // 🔹 Logout
-    Route::post('apprenant/logout', [ApprenantAuthController::class, 'logout']);
+    Route::post('v1/apprenant/logout', [ApprenantAuthController::class, 'logout']);
 });
 
 // ============================================================
@@ -122,6 +155,7 @@ Route::middleware(['auth:sanctum', 'role:chef_departement'])->prefix('v1')->grou
 
     // ==================== STAGES ====================
     Route::post('stages', [StageController::class, 'store']);
+    Route::get('/chef-de-departement/stages', [chefDeDepartementController::class, 'getEtudiantsAffectes']);
     Route::put('stages/{id}', [StageController::class, 'update']);
     Route::delete('stages/{id}', [StageController::class, 'destroy']);
     Route::post('stages/assign', [StageController::class, 'assign']);
@@ -185,12 +219,14 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::get('/entreprises-disponibles', [ChefDeMetierController::class, 'entreprisesDisponibles']);
     Route::put('/demandes/{id}/affecter', [ChefDeMetierController::class, 'affecter']);
 
+    Route::get('/demandes/demande', [ChefDeMetierController::class, 'accepterEtAffecterEtudiant']);
     Route::post('/demandes/{id}/accepter', [ChefDeMetierController::class, 'accepterEtAffecterEtudiant']);
     Route::post('/demandes/{id}/reorienter', [ChefDeMetierController::class, 'reorienterEtudiant']);
 
     Route::get('/affectations/export', [ChefDeMetierController::class, 'export']);
     Route::post('/affectations/envoyer-rh', [ChefDeMetierController::class, 'envoyerRh']);
-    Route::get('/affectations', [ChefDeMetierController::class, 'affectations']);
+    // Route::get('/affectations', [ChefDeMetierController::class, 'affectations']);
+    Route::get('/affectations', [CampagneDeStageController::class, 'campagnesDisponiblesPourChefDeMetier']);
 
     // Soumissions
     Route::post('/soumettre-maitre-stage', [RHController::class, 'soumettreAuMaitreStage']);

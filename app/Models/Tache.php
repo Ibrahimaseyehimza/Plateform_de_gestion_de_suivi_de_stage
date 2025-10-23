@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Tache extends Model
 {
@@ -12,26 +11,21 @@ class Tache extends Model
 
     protected $fillable = [
         'stage_id',
-         'maitre_stage_id',
+        'maitre_stage_id',
         'etudiant_id',
         'titre',
         'description',
         'date_echeance',
-        'statut',
+        'priorite',  // ✅ Ajouté
+        'statut',    // ✅ Ajouté
     ];
 
+    protected $casts = [
+        'date_echeance' => 'date',
+    ];
 
-    public function stage()
-    {
-        return $this->belongsTo(Stage::class);
-    }
-
-    public function livrables()
-    {
-        return $this->hasMany(Livrable::class);
-    }
-
-     public function maitre()
+    // Relations
+    public function maitreStage()
     {
         return $this->belongsTo(User::class, 'maitre_stage_id');
     }
@@ -41,6 +35,8 @@ class Tache extends Model
         return $this->belongsTo(User::class, 'etudiant_id');
     }
 
-
-
+    public function stage()
+    {
+        return $this->belongsTo(Stage::class);
+    }
 }

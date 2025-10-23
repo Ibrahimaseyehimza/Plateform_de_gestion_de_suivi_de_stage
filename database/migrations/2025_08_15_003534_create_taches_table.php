@@ -6,31 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('taches', function (Blueprint $table) {
             $table->id();
-            // $table->foreignId('stage_id')->constrained('stages')->onDelete('cascade');
             $table->foreignId('stage_id')->nullable()->constrained('stages')->onDelete('cascade');
             $table->foreignId('maitre_stage_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('etudiant_id')->constrained('users')->onDelete('cascade');
             $table->string('titre');
             $table->text('description')->nullable();
-            // $table->datetime('dateLimite');
             $table->date('date_echeance')->nullable();
-            $table->enum('statut', ['en_cours', 'terminee'])->default('en_cours');
-
-            // $table->enum('statut', ['en_attente', 'en_cours', 'terminee'])->default('en_attente');
+            
+            // ✅ Ajout de la priorité
+            $table->enum('priorite', ['basse', 'moyenne', 'haute'])->default('moyenne');
+            
+            // ✅ Ajout de 'en_attente' dans le statut
+            $table->enum('statut', ['en_attente', 'en_cours', 'terminee'])->default('en_attente');
+            
             $table->timestamps();
+            
+            // Index pour optimiser les requêtes
+            $table->index('maitre_stage_id');
+            $table->index('etudiant_id');
+            $table->index('statut');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('taches');

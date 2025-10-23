@@ -1,82 +1,5 @@
 <?php
 
-// namespace App\Http\Controllers;
-
-// use App\Models\User;
-// use Illuminate\Support\Str;
-// use App\Mail\InvitationMail;
-// use Illuminate\Http\Request;
-// use App\Http\Controllers\Controller;
-// use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Facades\Mail;
-// use App\Http\Requests\RegisterRequest;
-
-// class UserController extends Controller
-// {
-//      public function store(RegisterRequest $request)
-//     {
-//         $validated = $request->validated();
-//         $currentUser = auth()->user();
-//     //Vérification du rôle
-//     if ($validated['role'] === User::ROLE_CHEF_METIER) {
-//         // Vérifier que le metier n'a pas déjà un chef
-//         if (User::where('role', User::ROLE_CHEF_METIER)
-//                 ->where('metier_id', $validated['metier_id'])
-//                 ->exists()) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Ce métier a déjà un chef.'
-//             ], 403);
-//         }
-//     }
-
-//     if ($validated['role'] === User::ROLE_CHEF_DEPARTEMENT) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Impossible de créer un autre chef de département.'
-//         ], 403);
-//     }
-
-
-//         // Générer un mot de passe temporaire
-//         $temporaryPassword = Str::random(10);
-
-//         // Créer l’utilisateur
-//         $user = User::create([
-//             'nom' => $validated['nom'],
-//             'email' => $validated['email'],
-//             'role' => $validated['role'],
-//             // 'departement_id' => $validated['departement_id'] ?? null,
-//             'metier_id' => $validated['metier_id'] ?? null,
-//             'entreprise_id' => $validated['entreprise_id'] ?? null,
-//             'entreprise_id' => $validated['matricule'] ?? null,
-//             //   'matricule' => $row['matricule'],
-//             'password' => Hash::make($temporaryPassword),
-//             'must_change_password' => true,
-//         ]);
-
-//         // Envoyer l’email avec les identifiants
-//         Mail::to($user->email)->queue(new InvitationMail($user, $temporaryPassword));
-
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Utilisateur créé avec succès. Un email a été envoyé avec ses identifiants.',
-//             'data' => $user
-//         ], 201);
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
-
-
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -95,36 +18,6 @@ class UserController extends Controller
     /**
      * 🧍‍♂️ Liste des utilisateurs (optionnellement filtrés par rôle)
      */
-    // public function index(Request $request)
-    // {
-    //     $role = $request->query('role');
-    //     $query = User::with('metier');
-
-    //     if ($role) {
-    //         $query->where('role', $role);
-    //     }
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $query->get()
-    //     ]);
-    // }
-
-       // 📋 Récupérer tous les apprenants
-        // public function index()
-        // {
-        //     $apprenants = Apprenant::with('metier', 'maitreDeStage')
-        //         ->orderBy('created_at', 'desc')
-        //         ->get();
-
-        //     \Log::info('Nombre d\'apprenants trouvés: ' . $apprenants->count());
-
-        //     return response()->json([
-        //         'success' => true,
-        //         'data' => $apprenants
-        //     ], 200);
-        // }
-
          /**
      * 📋 Récupérer tous les apprenants depuis la table users
      * CORRECTION: Au lieu de récupérer depuis la table Apprenant (qui était vide),
@@ -180,27 +73,6 @@ class UserController extends Controller
     /**
      * 🧾 Importation d’apprenants depuis un fichier Excel
      */
-    // public function import(Request $request)
-    // {
-    //     $request->validate([
-    //         'file' => 'required|file|mimes:xlsx,csv|max:10240'
-    //     ]);
-
-    //     try {
-    //         Excel::import(new ApprenantsImport, $request->file('file'));
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Importation réussie ✅'
-    //         ], 200);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Erreur lors de l\'importation',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
 
     public function import(Request $request)
     {
@@ -300,6 +172,7 @@ class UserController extends Controller
             'entreprise_id' => 'required|exists:entreprises,id',
             'adresse_1' => 'required|string|max:255',
             'adresse_2' => 'nullable|string|max:255',
+            'telephone' => 'required|string|max:255',
         ]);
 
         $campagne = CampagneDeStage::findOrFail($data['campagne_id']);
@@ -316,6 +189,7 @@ class UserController extends Controller
             'entreprise_id' => $data['entreprise_id'],
             'adresse_1' => $data['adresse_1'],
             'adresse_2' => $data['adresse_2'],
+            'telephone' => $data['telephone'],
             'statut' => 'en_attente'
         ]);
 

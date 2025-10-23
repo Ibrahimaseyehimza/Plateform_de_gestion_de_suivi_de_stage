@@ -10,19 +10,17 @@ return new class extends Migration
     {
         Schema::create('taches', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('stage_id')->nullable()->constrained('stages')->onDelete('cascade');
-            $table->foreignId('maitre_stage_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('etudiant_id')->constrained('users')->onDelete('cascade');
             $table->string('titre');
             $table->text('description')->nullable();
+            $table->foreignId('apprenant_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('stage_id')->nullable()->constrained('stages')->onDelete('cascade');
+            $table->foreignId('maitre_stage_id')->constrained('users')->onDelete('cascade');
             $table->date('date_echeance')->nullable();
-            
-            // ✅ Ajout de la priorité
-            $table->enum('priorite', ['basse', 'moyenne', 'haute'])->default('moyenne');
-            
-            // ✅ Ajout de 'en_attente' dans le statut
-            $table->enum('statut', ['en_attente', 'en_cours', 'terminee'])->default('en_attente');
-            
+                    $table->foreignId('entreprise_id')
+              ->nullable()
+              ->constrained('entreprises')
+              ->onDelete('cascade');
+            $table->enum('statut', ['en_cours', 'terminee'])->default('en_cours');
             $table->timestamps();
             
             // Index pour optimiser les requêtes

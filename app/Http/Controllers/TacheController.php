@@ -1,228 +1,400 @@
 <?php
 
+// namespace App\Http\Controllers;
+
+// use App\Models\Tache;
+// use Illuminate\Http\Request;
+// use App\Http\Controllers\Controller;
+// use App\Http\Resources\TacheResource;
+
+// class TacheController extends Controller
+// {
+//     // 🔍 Récupérer les tâches du maître connecté
+//     public function index(Request $request)
+//     {
+//         $maitre = $request->user();
+
+//         $taches = Tache::with('etudiant')
+//             ->where('maitre_stage_id', $maitre->id)
+//             ->orderBy('created_at', 'desc')
+//             ->get();
+
+//         return response()->json([
+//             'success' => true,
+//             'taches' => $taches
+//         ]);
+//     }
+
+//      public function store(Request $request)
+//     {
+//         try {
+//             $validated = $request->validate([
+//                 // 'stage_id' => 'required|exists:stages,id',
+//                 'stage_id' => 'nullable|exists:stages,id',
+//                 'etudiant_id' => 'required|exists:users,id',
+//                 'titre' => 'required|string|max:255',
+//                 'description' => 'nullable|string',
+//                 'date_echeance' => 'required|date|after_or_equal:today',
+//             ]);
+
+//             $maitre = $request->user();
+
+//             if ($maitre->role !== 'maitre_stage') {
+//                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+//             }
+
+//             $tache = Tache::create([
+//                 'stage_id' => $validated['stage_id'],
+//                 'maitre_stage_id' => $maitre->id,
+//                 'etudiant_id' => $validated['etudiant_id'],
+//                 'titre' => $validated['titre'],
+//                 'description' => $validated['description'] ?? '',
+//                 'date_echeance' => $validated['date_echeance'],
+//             ]);
+
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Tâche créée avec succès ✅',
+//                 'tache' => $tache
+//             ]);
+
+//             } catch (\Illuminate\Validation\ValidationException $e) {
+//             // 🔍 Erreur de validation
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Erreur de validation',
+//                 'errors' => $e->errors()
+//             ], 422);
+
+//         } catch (\Illuminate\Database\QueryException $e) {
+//             // 💾 Erreur SQL (clé étrangère, etc.)
+//             \Log::error('Erreur SQL lors de la création de la tâche : '.$e->getMessage());
+
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Erreur lors de la création dans la base de données',
+//                 'error' => $e->getMessage()
+//             ], 500);
+
+//         } catch (\Throwable $e) {
+//             // 🚨 Autre erreur imprévue
+//             \Log::error('Erreur dans TacheController@store : '.$e->getMessage(), [
+//                 'trace' => $e->getTraceAsString()
+//             ]);
+
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Erreur interne du serveur',
+//                 'error' => $e->getMessage()
+//             ], 500);
+//         }
+//     }
+
+//     // Voir une tâche
+//     public function show(Tache $tache)
+//     {
+//         return new TacheResource($tache->load('livrables'));
+//     }
+
+//     // Mettre à jour une tâche
+//     public function update(Request $request, Tache $tache)
+//     {
+//         $data = $request->validate([
+//             'titre' => 'sometimes|string|max:255',
+//             'description' => 'nullable|string',
+//             'dateLimite' => 'nullable|date',
+//         ]);
+
+//         $tache->update($data);
+
+//         return new TacheResource($tache->load('livrables'));
+//     }
+
+//     // Supprimer une tâche
+//     public function destroy(Tache $tache)
+//     {
+//         $tache->delete();
+
+//         return response()->json(['message' => 'Tâche supprimée avec succès']);
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace App\Http\Controllers;
 
 use App\Models\Tache;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Http\Resources\TacheResource;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class TacheController extends Controller
 {
-    // 🔍 Récupérer les tâches du maître connecté
+    /**
+     * Récupérer toutes les tâches avec filtres et recherche
+     */
     public function index(Request $request)
     {
-        try {
-            $maitre = $request->user();
+        $user = $request->user();
+        $entrepriseId = $user->entreprise_id;
 
-            $taches = Tache::with('etudiant:id,name,prenom,email')
-                ->where('maitre_stage_id', $maitre->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $taches,
-                'taches' => $taches // Pour compatibilité
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Erreur index tâches: ' . $e->getMessage());
-            
+        if (!$entrepriseId) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la récupération des tâches',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+                'message' => "Aucune entreprise associée à ce maître de stage."
+            ], 404);
         }
+
+        // Paramètres de recherche et filtre
+        $search = $request->get('search', '');
+        $statut = $request->get('statut', 'all');
+
+        // Query de base avec relations
+        $query = Tache::with(['apprenant', 'entreprise'])
+            ->where('entreprise_id', $entrepriseId);
+
+        // Filtre par recherche
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('titre', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('apprenant', function($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%")
+                           ->orWhere('prenom', 'like', "%{$search}%")
+                           ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filtre par statut
+        if ($statut && $statut !== 'all') {
+            $query->where('statut', $statut);
+        }
+
+        $taches = $query->orderBy('created_at', 'desc')->get();
+
+        // Calculer les statistiques
+        $statsQuery = Tache::where('entreprise_id', $entrepriseId);
+
+        $stats = [
+            'total' => $statsQuery->count(),
+            'en_attente' => (clone $statsQuery)->where('statut', 'en_attente')->count(),
+            'en_cours' => (clone $statsQuery)->where('statut', 'en_cours')->count(),
+            'terminees' => (clone $statsQuery)->where('statut', 'terminee')->count(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'taches' => $taches,
+            'stats' => $stats
+        ], 200);
     }
 
-    // ➕ Créer une tâche
+    /**
+     * Afficher une tâche spécifique
+     */
+    public function show(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $tache = Tache::with(['apprenant', 'maitreStage', 'entreprise'])
+            ->where('entreprise_id', $user->entreprise_id)
+            ->find($id);
+
+        if (!$tache) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tâche introuvable'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'tache' => $tache
+        ], 200);
+    }
+
+    /**
+     * Créer une nouvelle tâche
+     */
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'etudiant_id' => 'required|exists:users,id',
-                'titre' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'date_echeance' => 'required|date|after_or_equal:today',
-                'priorite' => 'required|in:basse,moyenne,haute',
-            ]);
+        $user = $request->user();
 
-            $maitre = $request->user();
-
-            if ($maitre->role !== 'maitre_stage') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Non autorisé'
-                ], 403);
-            }
-
-            $tache = Tache::create([
-                'maitre_stage_id' => $maitre->id,
-                'etudiant_id' => $validated['etudiant_id'],
-                'titre' => $validated['titre'],
-                'description' => $validated['description'] ?? '',
-                'date_echeance' => $validated['date_echeance'],
-                'priorite' => $validated['priorite'],
-                'statut' => 'en_attente',
-            ]);
-
-            $tache->load('etudiant:id,name,prenom');
-
+        if (!$user->entreprise_id) {
             return response()->json([
-                'success' => true,
-                'message' => 'Tâche créée avec succès ✅',
-                'data' => $tache,
-                'tache' => $tache
-            ], 201);
+                'success' => false,
+                'message' => "Vous devez être rattaché à une entreprise pour créer une tâche."
+            ], 403);
+        }
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'titre' => 'required|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'apprenant_id' => 'required|exists:users,id',
+            // 'priorite' => 'required|in:basse,moyenne,haute',
+            'date_echeance' => 'required|date|after_or_equal:today',
+        ], [
+            'titre.required' => 'Le titre est obligatoire',
+            'apprenant_id.required' => 'Vous devez sélectionner un apprenant',
+            'apprenant_id.exists' => 'Cet apprenant n\'existe pas',
+            // 'priorite.in' => 'Priorité invalide',
+            'date_echeance.required' => 'La date d\'échéance est obligatoire',
+            'date_echeance.after_or_equal' => 'La date d\'échéance ne peut pas être dans le passé',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur de validation',
-                'errors' => $e->errors()
+                'errors' => $validator->errors()
             ], 422);
+        }
 
-        } catch (\Exception $e) {
-            Log::error('Erreur store tâche: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
+        // Vérifier que l'apprenant est bien rattaché à la même entreprise
+        $apprenant = \App\Models\User::find($request->apprenant_id);
 
+        if ($apprenant->entreprise_id != $user->entreprise_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la création',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+                'message' => 'Cet apprenant n\'est pas rattaché à votre entreprise'
+            ], 403);
         }
+
+        // Créer la tâche
+        $tache = Tache::create([
+            'titre' => $request->titre,
+            'description' => $request->description,
+            'apprenant_id' => $request->apprenant_id,
+            'entreprise_id' => $user->entreprise_id,
+            'maitre_stage_id' => $user->id,
+            // 'priorite' => $request->priorite,
+            'date_echeance' => $request->date_echeance,
+            'statut' => 'en_cours',
+        ]);
+
+        $tache->load(['apprenant', 'entreprise']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tâche créée avec succès',
+            'tache' => $tache
+        ], 201);
     }
 
-    // ✏️ Mettre à jour une tâche
-    public function update(Request $request, Tache $tache)
+    /**
+     * Mettre à jour une tâche
+     */
+    public function update(Request $request, $id)
     {
-        try {
-            // Vérifier que c'est bien le maître qui a créé cette tâche
-            if ($tache->maitre_stage_id !== $request->user()->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Non autorisé'
-                ], 403);
-            }
+        $user = $request->user();
 
-            $validated = $request->validate([
-                'etudiant_id' => 'sometimes|exists:users,id',
-                'titre' => 'sometimes|string|max:255',
-                'description' => 'nullable|string',
-                'date_echeance' => 'sometimes|date',
-                'priorite' => 'sometimes|in:basse,moyenne,haute',
-            ]);
+        $tache = Tache::where('entreprise_id', $user->entreprise_id)
+            ->where('maitre_stage_id', $user->id)
+            ->find($id);
 
-            $tache->update($validated);
-            $tache->load('etudiant:id,name,prenom');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tâche mise à jour avec succès ✅',
-                'data' => $tache,
-                'tache' => $tache
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erreur update tâche: ' . $e->getMessage());
-
+        if (!$tache) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors de la mise à jour',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    // 🗑️ Supprimer une tâche
-    public function destroy(Request $request, Tache $tache)
-    {
-        try {
-            // Vérifier que c'est bien le maître qui a créé cette tâche
-            if ($tache->maitre_stage_id !== $request->user()->id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Non autorisé'
-                ], 403);
-            }
-
-            $tache->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tâche supprimée avec succès ✅'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erreur destroy tâche: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la suppression',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    // 👥 Récupérer les étudiants affectés au maître
-    public function getEtudiantsAffectes(Request $request)
-    {
-        try {
-            $maitre = $request->user();
-
-            // Option 1 : Si les étudiants ont un champ maitre_stage_id
-            $etudiants = User::where('maitre_stage_id', $maitre->id)
-                ->where('role', 'etudiant')
-                ->select('id', 'name', 'prenom', 'email')
-                ->get();
-
-            // Option 2 : Si c'est via une relation stages
-            // $etudiants = User::whereHas('stage', function($q) use ($maitre) {
-            //     $q->where('maitre_stage_id', $maitre->id);
-            // })
-            // ->where('role', 'etudiant')
-            // ->select('id', 'name', 'prenom', 'email')
-            // ->get();
-
-            return response()->json([
-                'success' => true,
-                'data' => $etudiants,
-                'etudiants' => $etudiants
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erreur getEtudiantsAffectes: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la récupération des étudiants',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    // 📋 Voir une tâche
-    public function show(Tache $tache)
-    {
-        try {
-            $tache->load('etudiant:id,name,prenom,email');
-            
-            return response()->json([
-                'success' => true,
-                'data' => $tache,
-                'tache' => $tache
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tâche non trouvée'
+                'message' => 'Tâche introuvable ou vous n\'avez pas les droits'
             ], 404);
         }
+
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'titre' => 'sometimes|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            // 'priorite' => 'sometimes|in:basse,moyenne,haute',
+            'statut' => 'sometimes|in:en_attente,en_cours,terminee',
+            'date_echeance' => 'sometimes|date|after_or_equal:today',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $tache->update($request->only([
+            'titre',
+            'description',
+            // 'priorite',
+            'statut',
+            'date_echeance'
+        ]));
+
+        $tache->load(['apprenant', 'entreprise']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tâche mise à jour avec succès',
+            'tache' => $tache
+        ], 200);
+    }
+
+    /**
+     * Supprimer une tâche
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $tache = Tache::where('entreprise_id', $user->entreprise_id)
+            ->where('maitre_stage_id', $user->id)
+            ->find($id);
+
+        if (!$tache) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tâche introuvable ou vous n\'avez pas les droits'
+            ], 404);
+        }
+
+        $tache->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tâche supprimée avec succès'
+        ], 200);
+    }
+
+    /**
+     * Marquer une tâche comme terminée
+     */
+    public function marquerTerminee(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $tache = Tache::where('entreprise_id', $user->entreprise_id)
+            ->find($id);
+
+        if (!$tache) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tâche introuvable'
+            ], 404);
+        }
+
+        $tache->update(['statut' => 'terminee']);
+        $tache->load(['apprenant', 'entreprise']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tâche marquée comme terminée',
+            'tache' => $tache
+        ], 200);
     }
 }

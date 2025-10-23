@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\CampagneDeStage;
+use App\Models\DemandeDeStage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -106,66 +107,259 @@ class CampagneDeStageController extends Controller
         }
     }
 
-    public function campagnesOuvertesPourApprenant()
+    // public function campagnesOuvertesPourApprenant()
+    // {
+    //     try {
+    //         \Log::info('🔍 DEBUT - Recherche campagnes ouvertes');
+
+    //         // ✅ CORRECTION: utiliser 'entreprises' au pluriel
+    //         $campagnes = CampagneDeStage::where('statut', 'ouverte')
+    //             ->with(['entreprises', 'metier'])  // ← CORRIGÉ ICI
+    //             ->get();
+
+    //         \Log::info('📊 Campagnes ouvertes trouvées: ' . $campagnes->count());
+
+    //         if ($campagnes->isEmpty()) {
+    //             \Log::info('ℹ️ Aucune campagne ouverte trouvée');
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'data' => [],
+    //                 'message' => 'Aucune campagne ouverte trouvée'
+    //             ], 200);
+    //         }
+
+    //         \Log::info('✅ SUCCES - Campagnes récupérées');
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $campagnes,
+    //             'count' => $campagnes->count(),
+    //             'message' => 'Campagnes récupérées avec succès'
+    //         ], 200);
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('❌ ERREUR dans campagnesOuvertesPourApprenant: ' . $e->getMessage());
+    //         \Log::error('📁 File: ' . $e->getFile());
+    //         \Log::error('📍 Line: ' . $e->getLine());
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Erreur serveur: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+    // public function campagnesDisponiblesPourChefDeMetier(Request $request)
+    // {
+    //     try {
+    //         $user = $request->user();
+
+    //         if ($user->role !== 'chef_metier') {
+    //             return response()->json(['message' => 'Accès refusé'], 403);
+    //         }
+
+    //         // 🔍 Récupérer TOUTES les campagnes
+    //         $toutesCampagnes = CampagneDeStage::with('entreprises', 'metier')->get();
+
+    //         // 🔍 Campagnes pour le même métier (sans filtre statut)
+    //         $campagnesParMetier = CampagneDeStage::where('metier_id', $user->metier_id)
+    //             ->with('entreprises', 'metier')
+    //             ->get();
+
+    //         // 🔍 Campagnes ouvertes pour le même métier
+    //         $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+    //             ->where('statut', 'ouverte')
+    //             ->with('entreprises', 'metier')
+    //             ->get();
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $campagnes,
+    //             'debug' => [
+    //                 'user' => [
+    //                     'id' => $user->id,
+    //                     'email' => $user->email,
+    //                     'role' => $user->role,
+    //                     'metier_id' => $user->metier_id
+    //                 ],
+    //                 'stats' => [
+    //                     'total_campagnes_bdd' => $toutesCampagnes->count(),
+    //                     'campagnes_meme_metier' => $campagnesParMetier->count(),
+    //                     'campagnes_ouvertes_metier' => $campagnes->count(),
+    //                 ],
+    //                 'statuts_disponibles' => $toutesCampagnes->pluck('statut')->unique()->values(),
+    //                 'metiers_disponibles' => $toutesCampagnes->pluck('metier_id')->unique()->values(),
+    //                 'details_toutes_campagnes' => $toutesCampagnes->map(function($c) {
+    //                     return [
+    //                         'id' => $c->id,
+    //                         'titre' => $c->titre,
+    //                         'statut' => $c->statut,
+    //                         'metier_id' => $c->metier_id,
+    //                         'date_debut' => $c->date_debut,
+    //                         'date_fin' => $c->date_fin
+    //                     ];
+    //                 })
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Erreur serveur',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
+    public function campagnesDisponiblesPourChefDeMetier(Request $request)
+{
+    try {
+        $user = $request->user();
+
+        // Vérification du rôle
+        if ($user->role !== 'chef_metier') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        // Récupérer les affectations pour le métier du chef
+        // en supposant que vous avez une table 'affectations' ou 'candidatures'
+        $affectations = DemandeDeStage::where('statut', 'acceptee')
+            ->whereHas('campagne', function($query) use ($user) {
+                $query->where('metier_id', $user->metier_id);
+            })
+            ->with([
+                'etudiant' => function($query) {
+                    $query->select('id', 'nom', 'prenom', 'email', 'telephone');
+                },
+                'entreprise' => function($query) {
+                    $query->select('id', 'nom');
+                },
+                'campagne.metier'
+            ])
+            ->get();
+
+        // Statistiques des entreprises
+        $entreprisesStats = $affectations->groupBy('entreprise_id')
+            ->map(function($group) {
+                return [
+                    'id' => $group->first()->entreprise->id,
+                    'nom' => $group->first()->entreprise->nom,
+                    'total_apprenants' => $group->count()
+                ];
+            })
+            ->values();
+
+        // Informations du métier
+        $metierInfo = \App\Models\Metier::find($user->metier_id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $affectations->map(function($affectation) {
+                return [
+                    'id' => $affectation->id,
+                    'etudiant' => [
+                        'id' => $affectation->etudiant->id,
+                        'nom' => $affectation->etudiant->nom,
+                        'prenom' => $affectation->etudiant->prenom,
+                        'email' => $affectation->etudiant->email,
+                        'telephone' => $affectation->etudiant->telephone ?? 'N/A',
+                    ],
+                    'entreprise' => [
+                        'id' => $affectation->entreprise->id,
+                        'nom' => $affectation->entreprise->nom,
+                    ],
+                    'statut' => $affectation->statut,
+                    'date_affectation' => $affectation->updated_at,
+                ];
+            }),
+            'affectations' => $affectations, // Pour compatibilité avec le frontend
+            'metier' => [
+                'id' => $metierInfo->id,
+                'nom' => $metierInfo->nom,
+            ],
+            'entreprises_stats' => $entreprisesStats,
+            'stats' => [
+                'total_affectations' => $affectations->count(),
+                'nombre_entreprises' => $entreprisesStats->count(),
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('❌ Erreur getAffectationsPourChefDeMetier: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur serveur',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+
+    public function campagnesDisponiblesPourApprenant(Request $request)
     {
         try {
-            \Log::info('🔍 DEBUT - Recherche campagnes ouvertes');
+            $user = $request->user();
 
-            // ✅ CORRECTION: utiliser 'entreprises' au pluriel
-            $campagnes = CampagneDeStage::where('statut', 'ouverte')
-                ->with(['entreprises', 'metier'])  // ← CORRIGÉ ICI
-                ->get();
-
-            \Log::info('📊 Campagnes ouvertes trouvées: ' . $campagnes->count());
-
-            if ($campagnes->isEmpty()) {
-                \Log::info('ℹ️ Aucune campagne ouverte trouvée');
-                return response()->json([
-                    'success' => true,
-                    'data' => [],
-                    'message' => 'Aucune campagne ouverte trouvée'
-                ], 200);
+            if ($user->role !== 'apprenant') {
+                return response()->json(['message' => 'Accès refusé'], 403);
             }
 
-            \Log::info('✅ SUCCES - Campagnes récupérées');
+            // 🔍 Récupérer TOUTES les campagnes
+            $toutesCampagnes = CampagneDeStage::with('entreprises', 'metier')->get();
+
+            // 🔍 Campagnes pour le même métier (sans filtre statut)
+            $campagnesParMetier = CampagneDeStage::where('metier_id', $user->metier_id)
+                ->with('entreprises', 'metier')
+                ->get();
+
+            // 🔍 Campagnes ouvertes pour le même métier
+            $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
+                ->where('statut', 'ouverte')
+                ->with('entreprises', 'metier')
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $campagnes,
-                'count' => $campagnes->count(),
-                'message' => 'Campagnes récupérées avec succès'
-            ], 200);
+                'debug' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'metier_id' => $user->metier_id
+                    ],
+                    'stats' => [
+                        'total_campagnes_bdd' => $toutesCampagnes->count(),
+                        'campagnes_meme_metier' => $campagnesParMetier->count(),
+                        'campagnes_ouvertes_metier' => $campagnes->count(),
+                    ],
+                    'statuts_disponibles' => $toutesCampagnes->pluck('statut')->unique()->values(),
+                    'metiers_disponibles' => $toutesCampagnes->pluck('metier_id')->unique()->values(),
+                    'details_toutes_campagnes' => $toutesCampagnes->map(function($c) {
+                        return [
+                            'id' => $c->id,
+                            'titre' => $c->titre,
+                            'statut' => $c->statut,
+                            'metier_id' => $c->metier_id,
+                            'date_debut' => $c->date_debut,
+                            'date_fin' => $c->date_fin
+                        ];
+                    })
+                ]
+            ]);
 
         } catch (\Exception $e) {
-            \Log::error('❌ ERREUR dans campagnesOuvertesPourApprenant: ' . $e->getMessage());
-            \Log::error('📁 File: ' . $e->getFile());
-            \Log::error('📍 Line: ' . $e->getLine());
-
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur serveur: ' . $e->getMessage()
+                'message' => 'Erreur serveur',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
-
-    public function campagnesDisponibles(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user->role !== 'apprenant') {
-            return response()->json(['message' => 'Accès refusé'], 403);
-        }
-
-        $campagnes = CampagneDeStage::where('metier_id', $user->metier_id)
-            ->where('statut', 'ouverte')
-            ->with('entreprises', 'metier')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $campagnes
-        ]);
-    }
 
     /**
      * 🔹 Récupère les campagnes destinées à une entreprise (RH connecté)

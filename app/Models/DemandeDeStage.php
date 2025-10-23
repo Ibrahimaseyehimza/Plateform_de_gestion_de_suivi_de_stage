@@ -18,6 +18,7 @@ class DemandeDeStage extends Model
         'entreprise_id',
         'adresse_1',
         'adresse_2',
+        'telephone',
         'statut',
     ];
 

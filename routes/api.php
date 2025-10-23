@@ -18,10 +18,11 @@ use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\MaitreStageController;
 use App\Http\Controllers\ChefDeMetierController;
-use App\Http\Controllers\CampagneDeStageController;
-use App\Http\Controllers\Auth\ApprenantAuthController;
-use App\Http\Controllers\chefDeDepartementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ApprenantTacheController;
+use App\Http\Controllers\CampagneDeStageController;
+use App\Http\Controllers\chefDeDepartementController;
+use App\Http\Controllers\Auth\ApprenantAuthController;
 
 // ============================================================
 //  ROUTES PUBLIQUES (sans authentification)
@@ -123,6 +124,10 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
 
     // 🔹 Logout
     Route::post('v1/apprenant/logout', [ApprenantAuthController::class, 'logout']);
+
+    Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'index']);
+    // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
+    Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
 });
 
 // ============================================================
@@ -252,7 +257,16 @@ Route::middleware(['auth:sanctum', 'role:maitre_stage'])->prefix('v1/maitre-stag
 
     Route::get('etudiants-affectes', [MaitreStageController::class, 'etudiantsAffectes']);
 
+    // Gestion des tâches
     Route::get('/taches', [TacheController::class, 'index']);
     Route::post('/taches', [TacheController::class, 'store']);
+    Route::post('/taches', [TacheController::class, 'store']);
+    Route::get('/taches/{id}', [TacheController::class, 'show']);
+    Route::put('/taches/{id}', [TacheController::class, 'update']);
+    Route::delete('/taches/{id}', [TacheController::class, 'destroy']);
+    Route::patch('/taches/{id}/terminer', [TacheController::class, 'marquerTerminee']);
+
+    // Récupérer les étudiants affectés
+    // Route::get('/etudiants-affectes', [MaitreStageController::class, 'getEtudiantsAffectes']);
 
 });

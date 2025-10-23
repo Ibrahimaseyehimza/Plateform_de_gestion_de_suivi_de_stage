@@ -87,6 +87,20 @@ class Entreprise extends Model
         return $this->hasMany(User::class, 'entreprise_id')->where('role', 'apprenant');
     }
 
+       // Relation avec les utilisateurs (maîtres de stage, apprenants)
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
+    // Relation avec les tâches
+    public function taches()
+    {
+        return $this->hasMany(Tache::class);
+    }
+
+
+
 
 
 

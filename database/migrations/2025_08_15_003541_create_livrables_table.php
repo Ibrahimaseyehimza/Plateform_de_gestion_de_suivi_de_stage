@@ -13,10 +13,6 @@ return new class extends Migration
     {
         Schema::create('livrables', function (Blueprint $table) {
             $table->id();
-            // $table->foreignId('tache_id')->constrained('taches')->onDelete('cascade');
-            // $table->string('fichier');
-            // $table->text('commentaire')->nullable();
-
             $table->foreignId('tache_id')->constrained('taches')->onDelete('cascade');
             $table->foreignId('apprenant_id')->constrained('users')->onDelete('cascade');
             $table->string('titre');

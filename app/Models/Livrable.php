@@ -24,6 +24,15 @@ class Livrable extends Model
         'commentaire',
     ];
 
+    protected $appends = ['fichier_url'];
+
+    public function getFichierUrlAttribute()
+    {
+        if (!$this->fichier) return null;
+        return asset('storage/' . $this->fichier);
+    }
+
+
     public function tache()
     {
         return $this->belongsTo(Tache::class);
@@ -32,4 +41,7 @@ class Livrable extends Model
     public function apprenant() {
         return $this->belongsTo(User::class, 'apprenant_id');
     }
+
+
+
 }

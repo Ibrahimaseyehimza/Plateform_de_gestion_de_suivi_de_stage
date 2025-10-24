@@ -83,6 +83,12 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('/livrables', [LivrableController::class, 'index']);
 });
 
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+
 // ============================================================
 //  ROUTES APPRENANT
 // ============================================================
@@ -184,7 +190,7 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
     // 🔹 Campagnes disponibles pour l'apprenant
     // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
     Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
-        Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
+    Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
 
     // 🔹 Stage actuel de l'apprenant
     Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
@@ -212,6 +218,7 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
 
      // Apprenant : soumettre un livrable
     Route::post('v1/livrables_apprenant', [LivrableController::class, 'store']);
+    Route::get('v1/mes_livrables', [LivrableController::class, 'index']);
     Route::put('/livrables/{livrable}', [LivrableController::class, 'update']);
 });
 
@@ -359,7 +366,8 @@ Route::middleware(['auth:sanctum', 'role:maitre_stage'])->prefix('v1/maitre-stag
     // Route::delete('/livrables/{id}', [LivrableController::class, 'destroy']);
 
     // Maître de stage : noter/commenter un livrable
-    Route::get('/livrables', [LivrableController::class, 'index']);
+    Route::get('/livrables', [LivrableController::class, 'indexMaitreStage']);
+    Route::put('/livrables/{id}', [LivrableController::class, 'update']);
 
 
     // Rapports et stagiaires

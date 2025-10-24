@@ -132,10 +132,23 @@ use Illuminate\Support\Facades\Storage;
 class LivrableController extends Controller
 {
     // Lister les livrables
-    public function index(Request $request)
+    // public function index(Request $request)
+    // {
+    //     $livrables = Livrable::with(['apprenant', 'tache'])->get();
+    //     return response()->json($livrables);
+    // }
+
+     // 🔹 Voir tous les livrables (pour le maître de stage)
+    public function index()
     {
-        $livrables = Livrable::with(['apprenant', 'tache'])->get();
-        return response()->json($livrables);
+        $livrables = Livrable::with(['tache', 'apprenant'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'livrables' => $livrables,
+        ]);
     }
 
     // Soumettre un nouveau livrable

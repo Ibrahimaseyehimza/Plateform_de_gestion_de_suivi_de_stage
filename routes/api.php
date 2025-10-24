@@ -10,12 +10,12 @@ use App\Http\Controllers\TacheController;
 use App\Http\Controllers\MetierController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\CampagneController;
-use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\ApprenantController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\MaitreStageController;
+use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\ChefDeMetierController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ApprenantTacheController;
@@ -41,12 +41,12 @@ Route::get('v1/departements', [DepartementController::class, 'index']);
 // ============================================================
 
 Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    
+
     // ========================================
     // AUTHENTIFICATION
     // ========================================
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // ========================================
     // NOTIFICATIONS (Tous les rôles)
     // ========================================
@@ -56,17 +56,17 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'delete']);
     Route::delete('/notifications/read/delete-all', [NotificationController::class, 'deleteAllRead']);
-    
+
     // Envoyer une notification (tous les rôles sauf apprenant)
     Route::post('/notifications/send', [NotificationController::class, 'send'])
         ->middleware('role:chef_departement,chef_metier,rh,maitre_stage');
-    
+
     // ========================================
     // LECTURE SEULE (tous les utilisateurs authentifiés)
     // ========================================
-    
+
     // Campagnes (lecture)
-    
+
     Route::get('/campagnes_global', [CampagneDeStageController::class, 'index']);
     Route::get('/campagnes/{id}', [CampagneDeStageController::class, 'show']);
 
@@ -78,6 +78,9 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     // Stages (lecture)
     Route::get('/stages_global', [StageController::class, 'index']);
     Route::get('/stages/{id}', [StageController::class, 'show']);
+
+     // Tous connectés : lister leurs livrables
+    Route::get('/livrables', [LivrableController::class, 'index']);
 });
 
 // ============================================================
@@ -114,87 +117,89 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 //  ROUTES APPRENANT
 // ============================================================
 
+// Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
+
+
+
+//     // 🔹 Campagnes disponibles pour l'apprenant
+
+//     // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+//     Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+//         Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
+
+
+
+//     // 🔹 Stage actuel de l'apprenant
+
+//     Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
+
+
+
+//     // 🔹 Upload rapport de stage
+
+//     Route::post('v1/apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
+
+
+
+//     // 🔹 Infos sur l'utilisateur connecté
+
+//     Route::get('v1/apprenant/me', [ApprenantAuthController::class, 'me']);
+
+
+
+//     // 🔹 Changer le mot de passe
+
+//     Route::post('v1/apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
+
+
+
+//     Route::post('v1/apprenant/postuler', [UserController::class, 'postuler']);
+
+
+
+//     Route::get('v1/apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
+
+
+
+//     // 🔹 Logout
+
+//     Route::post('v1/apprenant/logout', [ApprenantAuthController::class, 'logout']);
+
+
+
+//     Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'index']);
+
+//     // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
+
+//     Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
+
+
+
+// });
+
 Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
 
-
-
     // 🔹 Campagnes disponibles pour l'apprenant
-
     // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
-
     Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
-
         Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
 
-
-
     // 🔹 Stage actuel de l'apprenant
-
     Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
 
-
-
     // 🔹 Upload rapport de stage
-
     Route::post('v1/apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
 
-
-
     // 🔹 Infos sur l'utilisateur connecté
-
     Route::get('v1/apprenant/me', [ApprenantAuthController::class, 'me']);
 
-
-
     // 🔹 Changer le mot de passe
-
     Route::post('v1/apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
-
-
 
     Route::post('v1/apprenant/postuler', [UserController::class, 'postuler']);
 
-
-
-    Route::get('v1/apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
-
-
-
-    // 🔹 Logout
-
-    Route::post('v1/apprenant/logout', [ApprenantAuthController::class, 'logout']);
-
-
-
-    Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'index']);
-
-    // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
-
-    Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
-
-});
-
-Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
-
-    // 🔹 Campagnes disponibles pour l'apprenant
-    // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
-    Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
-        Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
-
-    // 🔹 Stage actuel de l'apprenant
-    Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
-
-    // 🔹 Upload rapport de stage
-    Route::post('v1/apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
-
-    // 🔹 Infos sur l'utilisateur connecté
-    Route::get('v1/apprenant/me', [ApprenantAuthController::class, 'me']);
-
-    // 🔹 Changer le mot de passe
-    Route::post('v1/apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
-
-    Route::post('v1/apprenant/postuler', [UserController::class, 'postuler']);
-
     Route::get('v1/apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
 
     // 🔹 Logout
@@ -203,6 +208,11 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
     Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'index']);
     // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
     Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
+
+
+     // Apprenant : soumettre un livrable
+    Route::post('v1/livrables_apprenant', [LivrableController::class, 'store']);
+    Route::put('/livrables/{livrable}', [LivrableController::class, 'update']);
 });
 
 
@@ -232,7 +242,7 @@ Route::middleware(['auth:sanctum', 'role:chef_departement'])->prefix('v1')->grou
     Route::put('/campagnes/{id}', [CampagneDeStageController::class, 'update']);
     Route::delete('/campagnes/{id}', [CampagneDeStageController::class, 'destroy']);
     Route::post('/campagnes/{id}/send-mails', [CampagneDeStageController::class, 'sendMails']);
-    
+
 
     // STAGES
     Route::post('/stages', [StageController::class, 'store']);
@@ -260,7 +270,7 @@ Route::middleware(['auth:sanctum', 'role:rh'])->prefix('v1')->group(function () 
     Route::get('/rh/stages', [RhController::class, 'stages']);
 
     Route::post('/campagnes/{id}/validation', [CampagneDeStageController::class, 'validerCampagne']);
-    
+
 
     Route::get('/campagnes_rh', [CampagneDeStageController::class, 'campagnesPourEntreprise']);
     Route::post('/campagnes/{id}/accepter', [CampagneDeStageController::class, 'accepterCampagne']);
@@ -299,7 +309,7 @@ Route::middleware(['auth:sanctum', 'role:chef_metier'])->prefix('v1/chef-metier'
     Route::post('/apprenants', [UserController::class, 'store']);
     Route::post('/apprenants/import', [UserController::class, 'import']);
     Route::delete('/apprenants/{id}', [ApprenantController::class, 'destroy']);
-    
+
 
     Route::get('/statistiques', [ChefDeMetierController::class, 'statistiques']);
     Route::get('/demandes', [ChefDeMetierController::class, 'demandes']);
@@ -343,15 +353,19 @@ Route::middleware(['auth:sanctum', 'role:maitre_stage'])->prefix('v1/maitre-stag
     Route::delete('/taches/{tache}', [TacheController::class, 'destroy']);
 
     // Livrables
+    // Route::get('/livrables', [LivrableController::class, 'index']);
+    // Route::post('/livrables', [LivrableController::class, 'store']);
+    // Route::put('/livrables/{id}', [LivrableController::class, 'update']);
+    // Route::delete('/livrables/{id}', [LivrableController::class, 'destroy']);
+
+    // Maître de stage : noter/commenter un livrable
     Route::get('/livrables', [LivrableController::class, 'index']);
-    Route::post('/livrables', [LivrableController::class, 'store']);
-    Route::put('/livrables/{id}', [LivrableController::class, 'update']);
-    Route::delete('/livrables/{id}', [LivrableController::class, 'destroy']);
-    
+
+
     // Rapports et stagiaires
     Route::get('/rapports', [MaitreStageController::class, 'getRapports']);
     Route::get('/stagiaires', [MaitreStageController::class, 'mesStagiaires']);
-    
+
     // Notifications d'affectation
     Route::get('/notifications-affectations', [MaitreStageController::class, 'notificationsAffectations']);
     Route::post('/notifications/{id}/lire', [MaitreStageController::class, 'marquerNotificationLue']);

@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Affectation; // ← AJOUTEZ CETTE LIGNE
+use App\Models\SoumissionMaitreStage;
 
 class MaitreStageController extends Controller
 {

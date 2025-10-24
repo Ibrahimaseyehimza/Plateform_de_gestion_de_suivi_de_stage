@@ -116,8 +116,70 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
 Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
 
+
+
     // 🔹 Campagnes disponibles pour l'apprenant
-   Route::get('apprenant/campagnes', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+    // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+    Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+
+        Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
+
+
+
+    // 🔹 Stage actuel de l'apprenant
+
+    Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
+
+
+
+    // 🔹 Upload rapport de stage
+
+    Route::post('v1/apprenant/stage/rapport', [StageController::class, 'uploadRapport']);
+
+
+
+    // 🔹 Infos sur l'utilisateur connecté
+
+    Route::get('v1/apprenant/me', [ApprenantAuthController::class, 'me']);
+
+
+
+    // 🔹 Changer le mot de passe
+
+    Route::post('v1/apprenant/change-password', [ApprenantAuthController::class, 'changePassword']);
+
+
+
+    Route::post('v1/apprenant/postuler', [UserController::class, 'postuler']);
+
+
+
+    Route::get('v1/apprenant/mes-demandes', [UserController::class, 'mesDemandes']);
+
+
+
+    // 🔹 Logout
+
+    Route::post('v1/apprenant/logout', [ApprenantAuthController::class, 'logout']);
+
+
+
+    Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'index']);
+
+    // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
+
+    Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
+
+});
+
+Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
+
+    // 🔹 Campagnes disponibles pour l'apprenant
+    // Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+    Route::get('v1/campagnes/apprenant', [CampagneDeStageController::class, 'campagnesDisponibles']);
+        Route::get('v1/route_campagne_apprenant', [CampagneDeStageController::class, 'campagnesDisponiblesPourApprenant']);
 
     // 🔹 Stage actuel de l'apprenant
     Route::get('v1/apprenant/stage', [StageController::class, 'getMyStage']);
@@ -142,6 +204,7 @@ Route::middleware(['auth:sanctum', 'role:apprenant'])->group(function () {
     // Route::get('v1/apprenant/taches', [ApprenantTacheController::class, 'getTaches']);
     Route::patch('/taches/{id}/terminer', [ApprenantTacheController::class, 'terminer']);
 });
+
 
 // ============================================================
 //  ROUTES CHEF DE DÉPARTEMENT

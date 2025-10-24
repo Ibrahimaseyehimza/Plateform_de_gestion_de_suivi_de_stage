@@ -22,10 +22,10 @@ return new class extends Migration
               ->onDelete('cascade');
             $table->enum('statut', ['en_cours', 'terminee'])->default('en_cours');
             $table->timestamps();
-            
+
             // Index pour optimiser les requêtes
             $table->index('maitre_stage_id');
-            $table->index('etudiant_id');
+            // $table->index('etudiant_id');
             $table->index('statut');
         });
     }

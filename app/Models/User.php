@@ -77,4 +77,14 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Entreprise::class);
     }
+
+    // public function livrables()
+    // {
+    //     return $this->hasMany(Livrable::class);
+    // }
+
+    public function livrables()
+    {
+        return $this->hasMany(Livrable::class, 'apprenant_id');
+    }
 }

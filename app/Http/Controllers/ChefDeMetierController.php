@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Notifications\AffectesNotification;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\EtudiantAffecteNotification;
 
 class ChefDeMetierController extends Controller
 {
@@ -268,79 +269,158 @@ class ChefDeMetierController extends Controller
 
     // ChefDeMetierController.php
 
-    public function accepterEtAffecterEtudiant(Request $request, $demandeId)
+    // public function accepterEtAffecterEtudiant(Request $request, $demandeId)
+    // {
+    //     $validated = $request->validate([
+    //         'entreprise_id' => 'required|exists:entreprises,id'
+    //     ]);
+
+    //     DB::beginTransaction();
+
+    //     try {
+    //         $demande = DemandeDeStage::findOrFail($demandeId);
+
+    //         // 1️⃣ Vérifier que l'entreprise a accepté la campagne
+    //         $pivot = DB::table('campagne_stage_entreprise')
+    //             ->where('campagne_de_stage_id', $demande->campagne_id)
+    //             ->where('entreprise_id', $validated['entreprise_id'])
+    //             ->where('statut', 'acceptée')
+    //             ->first();
+
+    //         if (!$pivot) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => '❌ Cette entreprise n\'a pas accepté la campagne'
+    //             ], 400);
+    //         }
+
+    //         // 2️⃣ Vérifier la disponibilité des places
+    //         if ($pivot->places_occupees >= $pivot->capacite_max) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => '❌ Capacité maximale atteinte pour cette entreprise',
+    //                 'details' => [
+    //                     'entreprise' => $pivot->entreprise_id,
+    //                     'capacite_max' => $pivot->capacite_max,
+    //                     'places_occupees' => $pivot->places_occupees
+    //                 ]
+    //             ], 400);
+    //         }
+
+    //         // 3️⃣ Mettre à jour la demande
+    //         $demande->update([
+    //             'entreprise_id' => $validated['entreprise_id'],
+    //             'statut' => 'acceptee'
+    //         ]);
+
+    //         // 4️⃣ Incrémenter places_occupees
+    //         DB::table('campagne_stage_entreprise')
+    //             ->where('campagne_de_stage_id', $demande->campagne_id)
+    //             ->where('entreprise_id', $validated['entreprise_id'])
+    //             ->increment('places_occupees');
+
+    //         DB::commit();
+
+    //         // 5️⃣ (Optionnel) Envoyer une notification au RH
+    //         // $rh = User::where('entreprise_id', $validated['entreprise_id'])
+    //         //           ->where('role', 'rh')
+    //         //           ->first();
+    //         // Mail::to($rh->email)->send(new NouvelEtudiantAffecte($demande));
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => '✅ Étudiant accepté et affecté avec succès',
+    //             'data' => [
+    //                 'demande' => $demande,
+    //                 'places_restantes' => $pivot->capacite_max - ($pivot->places_occupees + 1)
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Erreur: ' . $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+     public function accepterEtAffecterEtudiant(Request $request, $id)
     {
-        $validated = $request->validate([
-            'entreprise_id' => 'required|exists:entreprises,id'
-        ]);
-
-        DB::beginTransaction();
-
         try {
-            $demande = DemandeDeStage::findOrFail($demandeId);
-
-            // 1️⃣ Vérifier que l'entreprise a accepté la campagne
-            $pivot = DB::table('campagne_stage_entreprise')
-                ->where('campagne_de_stage_id', $demande->campagne_id)
-                ->where('entreprise_id', $validated['entreprise_id'])
-                ->where('statut', 'acceptée')
-                ->first();
-
-            if (!$pivot) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '❌ Cette entreprise n\'a pas accepté la campagne'
-                ], 400);
-            }
-
-            // 2️⃣ Vérifier la disponibilité des places
-            if ($pivot->places_occupees >= $pivot->capacite_max) {
-                return response()->json([
-                    'success' => false,
-                    'message' => '❌ Capacité maximale atteinte pour cette entreprise',
-                    'details' => [
-                        'entreprise' => $pivot->entreprise_id,
-                        'capacite_max' => $pivot->capacite_max,
-                        'places_occupees' => $pivot->places_occupees
-                    ]
-                ], 400);
-            }
-
-            // 3️⃣ Mettre à jour la demande
-            $demande->update([
-                'entreprise_id' => $validated['entreprise_id'],
-                'statut' => 'acceptee'
+            $validated = $request->validate([
+                'entreprise_id' => 'required|exists:entreprises,id',
             ]);
 
-            // 4️⃣ Incrémenter places_occupees
-            DB::table('campagne_stage_entreprise')
-                ->where('campagne_de_stage_id', $demande->campagne_id)
-                ->where('entreprise_id', $validated['entreprise_id'])
-                ->increment('places_occupees');
+            $chefMetier = $request->user();
 
-            DB::commit();
+            // Récupérer la demande
+            $demande = DemandeDeStage::findOrFail($id);
 
-            // 5️⃣ (Optionnel) Envoyer une notification au RH
-            // $rh = User::where('entreprise_id', $validated['entreprise_id'])
-            //           ->where('role', 'rh')
-            //           ->first();
-            // Mail::to($rh->email)->send(new NouvelEtudiantAffecte($demande));
+            // Vérifier que c'est bien pour le métier du chef
+            if ($demande->campagne->metier_id !== $chefMetier->metier_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous ne pouvez affecter que des étudiants de votre métier'
+                ], 403);
+            }
+
+            // Récupérer l'étudiant, l'entreprise et la campagne
+            $etudiant = User::findOrFail($demande->etudiant_id);
+            $entreprise = Entreprise::findOrFail($validated['entreprise_id']);
+            $campagne = CampagneDeStage::with('metier')->findOrFail($demande->campagne_id);
+
+            // Mettre à jour la demande
+            $demande->update([
+                'statut' => 'acceptee',
+                'entreprise_id' => $validated['entreprise_id'],
+                'updated_at' => now(),
+            ]);
+
+            // Mettre à jour l'entreprise de l'étudiant
+            $etudiant->update([
+                'entreprise_id' => $validated['entreprise_id']
+            ]);
+
+            \Log::info("📧 Envoi notification affectation à {$etudiant->email}");
+
+            // 📧 Envoyer l'email de notification à l'étudiant
+            Notification::send(
+                [$etudiant],
+                new EtudiantAffecteNotification($demande, $campagne, $entreprise, $chefMetier)
+            );
+
+            \Log::info("✅ Email d'affectation envoyé avec succès");
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Étudiant accepté et affecté avec succès',
+                'message' => "Étudiant affecté avec succès à {$entreprise->nom}. Un email de confirmation a été envoyé.",
                 'data' => [
                     'demande' => $demande,
-                    'places_restantes' => $pivot->capacite_max - ($pivot->places_occupees + 1)
+                    'etudiant' => [
+                        'nom' => $etudiant->nom,
+                        'prenom' => $etudiant->prenom,
+                        'email' => $etudiant->email,
+                    ],
+                    'entreprise' => [
+                        'nom' => $entreprise->nom,
+                        'adresse' => $entreprise->adresse,
+                    ],
+                    'campagne' => [
+                        'titre' => $campagne->titre,
+                        'metier' => $campagne->metier->nom,
+                    ]
                 ]
-            ]);
+            ], 200);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            \Log::error('❌ Erreur affectation: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur: ' . $e->getMessage()
+                'message' => 'Erreur lors de l\'affectation',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -411,24 +491,87 @@ class ChefDeMetierController extends Controller
     /**
      * ⚙️ Affecter un apprenant à une entreprise
      */
-    public function affecter(Request $request, $id)
+    // public function affecter(Request $request, $id)
+    // {
+    //     $request->validate([
+    //         'entreprise_id' => 'required|exists:entreprises,id'
+    //     ]);
+
+    //     $demande = DemandeDeStage::findOrFail($id);
+    //     $demande->entreprise_id = $request->entreprise_id;
+    //     $demande->statut = 'valide';
+    //     $demande->save();
+
+    //     // Mise à jour du compteur d’occupation
+    //     DB::table('campagne_stage_entreprise')
+    //         ->where('campagne_de_stage_id', $demande->campagne_id)
+    //         ->where('entreprise_id', $request->entreprise_id)
+    //         ->increment('places_occupees');
+
+    //     return response()->json(['success' => true, 'message' => 'Apprenant affecté avec succès.']);
+    // }
+
+     public function affecter(Request $request, $id)
     {
-        $request->validate([
-            'entreprise_id' => 'required|exists:entreprises,id'
-        ]);
+        try {
+            $validated = $request->validate([
+                'entreprise_id' => 'required|exists:entreprises,id',
+            ]);
 
-        $demande = DemandeDeStage::findOrFail($id);
-        $demande->entreprise_id = $request->entreprise_id;
-        $demande->statut = 'valide';
-        $demande->save();
+            $chefMetier = $request->user();
 
-        // Mise à jour du compteur d’occupation
-        DB::table('campagne_stage_entreprise')
-            ->where('campagne_de_stage_id', $demande->campagne_id)
-            ->where('entreprise_id', $request->entreprise_id)
-            ->increment('places_occupees');
+            $demande = DemandeDeStage::with(['campagne.metier', 'etudiant'])->findOrFail($id);
 
-        return response()->json(['success' => true, 'message' => 'Apprenant affecté avec succès.']);
+            // Vérifications
+            if ($demande->campagne->metier_id !== $chefMetier->metier_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Accès refusé'
+                ], 403);
+            }
+
+            $entreprise = Entreprise::findOrFail($validated['entreprise_id']);
+
+            // Affecter
+            $demande->update([
+                'statut' => 'acceptee',
+                'entreprise_id' => $validated['entreprise_id'],
+            ]);
+
+            $demande->etudiant->update([
+                'entreprise_id' => $validated['entreprise_id']
+            ]);
+
+            // 📧 Envoyer l'email
+            \Log::info("📧 Préparation email pour {$demande->etudiant->email}");
+
+            Notification::send(
+                [$demande->etudiant],
+                new EtudiantAffecteNotification(
+                    $demande,
+                    $demande->campagne,
+                    $entreprise,
+                    $chefMetier
+                )
+            );
+
+            \Log::info("✅ Notification envoyée");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Affectation réussie. Email envoyé à {$demande->etudiant->email}",
+                'data' => $demande
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Erreur: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'affectation',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function entreprisesAvecEtudiants()

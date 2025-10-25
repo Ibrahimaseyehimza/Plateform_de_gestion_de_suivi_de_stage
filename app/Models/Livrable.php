@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Livrable extends Model
 {
@@ -33,14 +34,26 @@ class Livrable extends Model
     }
 
 
-    public function tache()
-    {
-        return $this->belongsTo(Tache::class);
-    }
+    // public function tache()
+    // {
+    //     return $this->belongsTo(Tache::class);
+    // }
 
-    public function apprenant() {
+        public function tache()
+        {
+            return $this->belongsTo(Tache::class, 'tache_id');
+        }
+
+    // public function apprenant() {
+    //     return $this->belongsTo(User::class, 'apprenant_id');
+    // }
+
+
+    public function apprenant()
+    {
         return $this->belongsTo(User::class, 'apprenant_id');
     }
+
 
 
 

@@ -10,12 +10,13 @@ use App\Http\Controllers\TacheController;
 use App\Http\Controllers\MetierController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\CampagneController;
+use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\ApprenantController;
 use App\Http\Controllers\EntrepriseController;
 use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\SuiviStageController;
 use App\Http\Controllers\DepartementController;
 use App\Http\Controllers\MaitreStageController;
-use App\Http\Controllers\LivrableController;
 use App\Http\Controllers\ChefDeMetierController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ApprenantTacheController;
@@ -261,11 +262,15 @@ Route::middleware(['auth:sanctum', 'role:chef_departement'])->prefix('v1')->grou
     Route::post('/users', [UserController::class, 'store']);
     Route::get('/users', [UserController::class, 'index']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::get('/suivi-stage', [SuiviStageController::class, 'index']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     // Route pour récupérer le stage de l'apprenant connecté
     Route::get('/apprenant/mon-stage', [ApprenantController::class, 'monStage']);
+
+
 });
 
 // ============================================================

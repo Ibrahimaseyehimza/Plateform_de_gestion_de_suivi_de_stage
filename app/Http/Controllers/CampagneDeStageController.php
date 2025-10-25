@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Metier;
 use Illuminate\Http\Request;
-use App\Models\CampagneDeStage;
 use App\Models\DemandeDeStage;
+use App\Models\CampagneDeStage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\CampagneNotificationRHMail;
+use App\Notifications\NouvelleCampagneCreee;
+use Illuminate\Support\Facades\Notification;
 
 class CampagneDeStageController extends Controller
 {
@@ -24,43 +30,168 @@ class CampagneDeStageController extends Controller
     }
 
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'titre' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date|after:date_debut',
-            'metier_id' => 'required|exists:metiers,id',
-            'entreprise_ids' => 'required|array',
-            'entreprise_ids.*' => 'exists:entreprises,id',
-        ]);
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'titre' => 'required|string|max:255',
+    //         'description' => 'nullable|string',
+    //         'date_debut' => 'required|date',
+    //         'date_fin' => 'required|date|after:date_debut',
+    //         'metier_id' => 'required|exists:metiers,id',
+    //         'entreprise_ids' => 'required|array',
+    //         'entreprise_ids.*' => 'exists:entreprises,id',
+    //     ]);
 
+    //     $campagne = CampagneDeStage::create($validated);
+
+    //     foreach ($validated['entreprise_ids'] as $entrepriseId) { // ✅ corrigé ici
+    //         DB::table('campagne_stage_entreprise')->insert([
+    //             'campagne_de_stage_id' => $campagne->id,
+    //             'entreprise_id' => $entrepriseId,
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+
+    //         $rh = User::where('entreprise_id', $entrepriseId)
+    //                 ->where('role', 'rh')
+    //                 ->first();
+
+    //         // if ($rh) {
+    //         //     Mail::to($rh->email)->queue(new CampagneNotificationRHMail($rh, $campagne));
+    //         // }
+    //     }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Campagne créée avec succès et notifications envoyées aux RH.',
+    //         'data' => $campagne
+    //     ], 201);
+    // }
+
+
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'titre' => 'required|string|max:255',
+    //         'description' => 'nullable|string',
+    //         'date_debut' => 'required|date',
+    //         'date_fin' => 'required|date|after:date_debut',
+    //         'metier_id' => 'required|exists:metiers,id',
+    //         'entreprise_ids' => 'required|array',
+    //         'entreprise_ids.*' => 'exists:entreprises,id',
+    //     ]);
+
+    //     $campagne = CampagneDeStage::create($validated);
+
+    //     foreach ($validated['entreprise_ids'] as $entrepriseId) {
+    //         DB::table('campagne_stage_entreprise')->insert([
+    //             'campagne_de_stage_id' => $campagne->id,
+    //             'entreprise_id' => $entrepriseId,
+    //             'created_at' => now(),
+    //             'updated_at' => now(),
+    //         ]);
+    //     }
+
+    //     // 📩 1️⃣ Récupérer les destinataires
+    //     $chefsMetier = User::where('role', 'chef_metier')->get();
+    //     $apprenants = User::where('role', 'apprenant')->get();
+    //     $rhs = User::whereIn('entreprise_id', $validated['entreprise_ids'])
+    //             ->where('role', 'rh')
+    //             ->get();
+
+    //     // 📩 2️⃣ Envoyer la notification à tous
+    //     $destinataires = $chefsMetier->merge($apprenants)->merge($rhs);
+    //     Notification::send($destinataires, new NouvelleCampagneCreee($campagne));
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Campagne créée avec succès et notifications envoyées.',
+    //         'data' => $campagne
+    //     ], 201);
+    // }
+
+
+    public function store(Request $request)
+{
+    $validated = $request->validate([
+        'titre' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'date_debut' => 'required|date',
+        'date_fin' => 'required|date|after:date_debut',
+        'metier_id' => 'required|exists:metiers,id',
+        'entreprise_ids' => 'required|array',
+        'entreprise_ids.*' => 'exists:entreprises,id',
+    ]);
+
+    try {
         $campagne = CampagneDeStage::create($validated);
 
-        foreach ($validated['entreprise_ids'] as $entrepriseId) { // ✅ corrigé ici
+        foreach ($validated['entreprise_ids'] as $entrepriseId) {
             DB::table('campagne_stage_entreprise')->insert([
                 'campagne_de_stage_id' => $campagne->id,
                 'entreprise_id' => $entrepriseId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-
-            $rh = User::where('entreprise_id', $entrepriseId)
-                    ->where('role', 'rh')
-                    ->first();
-
-            // if ($rh) {
-            //     Mail::to($rh->email)->queue(new CampagneNotificationRHMail($rh, $campagne));
-            // }
         }
+
+        $campagne->load(['metier', 'entreprises']);
+
+        // ✅ Récupérer UNIQUEMENT les destinataires concernés
+        $destinataires = collect();
+
+        // Chefs de métier du métier concerné
+        $destinataires = $destinataires->merge(
+            User::where('role', 'chef_metier')
+                ->where('metier_id', $validated['metier_id'])
+                ->get()
+        );
+
+        // Apprenants du métier concerné
+        $destinataires = $destinataires->merge(
+            User::where('role', 'apprenant')
+                ->where('metier_id', $validated['metier_id'])
+                ->get()
+        );
+
+        // RH des entreprises concernées
+        $destinataires = $destinataires->merge(
+            User::whereIn('entreprise_id', $validated['entreprise_ids'])
+                ->where('role', 'rh')
+                ->get()
+        );
+
+        \Log::info("📧 {$destinataires->count()} destinataire(s) identifié(s)");
+
+        // ✅ Envoyer avec délai pour respecter la limite Mailtrap
+        $delay = 0;
+        foreach ($destinataires as $destinataire) {
+            Notification::send(
+                [$destinataire],
+                (new NouvelleCampagneCreee($campagne))->delay(now()->addSeconds($delay))
+            );
+            $delay += 2; // 2 secondes entre chaque email = max 30 emails/minute
+        }
+
+        \Log::info("✅ Notifications programmées avec succès");
 
         return response()->json([
             'success' => true,
-            'message' => 'Campagne créée avec succès et notifications envoyées aux RH.',
-            'data' => $campagne
+            'message' => "Campagne créée avec succès. {$destinataires->count()} notification(s) en cours d'envoi.",
+            'data' => $campagne,
+            'notifications_sent' => $destinataires->count()
         ], 201);
+
+    } catch (\Exception $e) {
+        \Log::error('❌ Erreur: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la création',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Supprimer une campagne de stage c'est que j'ai ajouter

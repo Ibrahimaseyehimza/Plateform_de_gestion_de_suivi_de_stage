@@ -137,7 +137,7 @@ public function index(Request $request)
                         'description' => $livrable->description,
                         'fichier' => $livrable->fichier,
                         'fichier_url' => $livrable->fichier_url,
-                        'statut' => $livrable->statut, // ✅ Statut donné par maître de stage
+                        'statut' => $livrable->statut, //  Statut donné par maître de stage
                         'note' => $livrable->note,
                         'commentaire' => $livrable->commentaire,
                         'tache' => $livrable->tache ? [
